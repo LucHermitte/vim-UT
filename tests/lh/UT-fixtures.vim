@@ -49,6 +49,9 @@ function! s:TestTeardown()
   Assert s:v2 == 2
 endfunction
 
+" UTPlay TestTeardown
+UTIgnore TestTeardown
+
 "------------------------------------------------------------------------
 let &cpo=s:cpo_save
 "=============================================================================

@@ -3,8 +3,8 @@
 " File:		mk-UT.vim
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://hermitte.free.fr/vim/>
-" Version:	0.0.1
-let s:version = '0.0.1'
+" Version:	0.0.2
+let s:version = '0.0.2'
 " Created:	19th Feb 2009
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -20,6 +20,7 @@ finally
 endtry
 finish
 autoload/lh/UT.vim
+ftplugin/vim/vim_UT.vim
 mkVba/mk-UT.vim
 plugin/UT.vim
 tests/lh/UT-fixtures.vim
