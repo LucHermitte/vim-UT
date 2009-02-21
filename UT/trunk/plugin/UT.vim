@@ -3,11 +3,11 @@
 " File:		plugin/UT.vim                                        {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://hermitte.free.fr/vim/>
-" Version:	0.0.1
+" Version:	0.0.2
 " Created:	11th Feb 2009
 " Last Update:	$Date$
 "------------------------------------------------------------------------
-" Description:	Yet Another Unit Testing Framawork for Vim 
+" Description:	Yet Another Unit Testing Framework for Vim 
 " 
 "------------------------------------------------------------------------
 " Installation:	«install details»
@@ -18,10 +18,10 @@
 "=============================================================================
 
 " Avoid global reinclusion {{{1
-if &cp || (exists("g:loaded_Assert") && !exists('g:force_reload_Assert'))
+if &cp || (exists("g:loaded_UT") && !exists('g:force_reload_UT'))
   finish
 endif
-let g:loaded_Assert = 001
+let g:loaded_UT = 002
 let s:cpo_save=&cpo
 set cpo&vim
 " Avoid global reinclusion }}}1
@@ -47,3 +47,4 @@ command! -nargs=* UTSuite :echoerr "Use :UTRun and not :source on this script"<b
 let &cpo=s:cpo_save
 "=============================================================================
 " vim600: set fdm=marker:
+" VIM: let g:UTfiles='tests/lh/UT*.vim'

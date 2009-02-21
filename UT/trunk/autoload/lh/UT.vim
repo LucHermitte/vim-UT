@@ -3,7 +3,7 @@
 " File:         autoload/lh/UT.vim                                {{{1
 " Author:       Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "               <URL:http://hermitte.free.fr/vim/>
-" Version:      0.0.1
+" Version:      0.0.2
 " Created:      11th Feb 2009
 " Last Update:  $Date$
 "------------------------------------------------------------------------
@@ -18,7 +18,8 @@
 " Features:
 " - Assertion failures are reported in the quickfix window
 " - Assertion syntax is simple, check Tom Link's suite, it's the same
-" - Supports banged :Assert! to stop processing a given test on the first error
+" - Supports banged :Assert! to stop processing a given test on failed
+"   assertions
 " - One file == a suite
 " - All the s:Test* functions of a suite are executed (almost) independently
 "   (i.e., a critical :Assert! failure will stop the Test of the function, and
@@ -26,27 +27,35 @@
 " - Lightweight and simple to use: there is only one command defined, all the
 "   other definitions are kept in an autoload plugin.
 " - A suite == a file
-" - Several s:TestXxx() per suite, + optional s:Setup() and s:Teardown() 
+" - Several s:TestXxx() per suite
 " - +optional s:Setup(), s:Teardown()
 " - Supports :Comments
 " - s:LocalFunctions(), s:variables, and l:variables are supported
 " - Takes advantage of BuildToolsWrapper's :COpen command if installed
+" - Count successful tests and not successful assertions
+" - Short-cuts to run the Unit Tests associated to a given vim script
+"   Relies on: Let-Modeline/local_vimrc/Project to set g:UTfiles (space
+"   separated list of glob-able paths), and on lh-vim-lib#path
+" - Command to exclude, or specify the tests to play => UTPlay, UTIgnore
 "
 " TODO:         
+" - Always execute s:Teardown() -- move its call to a :finally bloc
+" - Test in UTF-8 (because of <SNR>_ injection)
+" - test under windows (where paths have spaces, etc)
+" - What about s:/SNR pollution ? The tmpfile is reused, and there is no
+"   guaranty a script will clean its own place
 " - add &efm for viml errors like the one produced by :Assert 0 + [0]
-" - test under windows
-" - Command to exclude, or specify the tests to play => UTPlay, UTIgnore
+"   and take into account the offset introduced by lines injected at the top of
+"   the file
 " - simplify s:errors functions
 " - merge with Tom Link tAssert plugin? (the UI is quite different)
-" - :AssertEquals that shows the name of both expresions and their values as
+" - :AssertEquals that shows the name of both expressions and their values as
 "   well -- a correct distinction of both parameters will be tricky with
 "   regexes ; using functions will loose either the name, or the value in case
 "   of local/script variables use ; we need macros /à la C/...
 " - Support Embedded comments like for instance: 
 "   Assert 1 == 1 " 1 must value 1
 " - Ways to test buffers produced
-" - Count successful tests and not successful assertions
-" - Shortcuts to run the Unit Tests associated to a given vim script
 " }}}1
 "=============================================================================
 
@@ -83,60 +92,38 @@ endfunction
 " sessions opened simultaneously.
 let s:tempfile = tempname()
 
+"------------------------------------------------------------------------
+" s:errors
 let s:errors = {
-      \ 'qf'         : [],
-      \ 'crt_suite'  : {},
-      \ 'nb_asserts' : 0,
-      \ 'nb_success' : 0,
-      \ 'suites'     : []
+      \ 'qf'                    : [],
+      \ 'crt_suite'             : {},
+      \ 'nb_asserts'            : 0,
+      \ 'nb_successful_asserts' : 0,
+      \ 'nb_success'            : 0,
+      \ 'suites'                : []
       \ }
 
 function! s:errors.clear() dict
-  let self.qf         = []
-  let self.nb_asserts = 0
-  let self.nb_success = 0
-  let self.suites     = []
+  let self.qf                    = []
+  let self.nb_asserts            = 0
+  let self.nb_successful_asserts = 0
+  let self.nb_success            = 0
+  let self.nb_tests              = 0
+  let self.suites                = []
 endfunction
 
 function! s:errors.display() dict
-  call add(self.qf, self.nb_success .'/'. self.nb_asserts . ' tests successfully executed.')
   let g:errors = self.qf
   cexpr self.qf
 
   " Open the quickfix window
   if exists(':Copen')
     " Defined in lh-BTW, make the windows as big as the number of errors, not
-    " opened if there is no errors
+    " opened if there is no error
     Copen
   else
     copen
   endif
-endfunction
-
-" Suites wrapper functions
-function! s:AddTest(test_name) dict
-  call add(self.tests, a:test_name)
-endfunction
-
-function! s:errors.new_suite(scriptname) dict
-  let suite = {
-        \ 'scriptname': a:scriptname,
-        \ 'tests'     : [],
-        \ 'snr'       : '',
-        \ 'add_test'  : function('s:AddTest')
-        \ }
-  call add(self.suites, suite)
-  let self.crt_suite = suite
-  return suite
-endfunction
-
-function! s:errors.set_suite(suite_name) dict
-  let a = s:Decode(a:suite_name)
-  call s:Verbose('SUITE <- '. a.expr, 1)
-  call s:Verbose('SUITE NAME: '. a:suite_name, 2)
-  call self.add(a.file, a.line, 'SUITE <'. a.expr .'>')
-  let self.crt_suite.name = a.expr
-  let self.crt_suite.file = a.file
 endfunction
 
 function! s:errors.set_current_SNR(SNR)
@@ -153,13 +140,103 @@ function! s:errors.add(FILE, LINE, message) dict
 endfunction
 
 function! s:errors.add_test(test_name) dict
-  call add(self.crt_suite.tests, a:test_name)
+  call self.add_test(a:test_name)
+endfunction
+
+function! s:errors.set_test_failed() dict
+  if has_key(self, 'crt_test') 
+    let self.crt_test.failed = 1
+  endif
+endfunction
+
+"------------------------------------------------------------------------
+" Tests wrapper functions
+
+function! s:RunOneTest(file) dict
+  try
+    let s:errors.crt_test = self
+    if has_key(s:errors.crt_suite, 'setup')
+      let F = function(s:errors.get_current_SNR().'Setup')
+      call F()
+    endif
+    let F = function(s:errors.get_current_SNR(). self.name)
+    call F()
+    if has_key(s:errors.crt_suite, 'teardown')
+      let F = function(s:errors.get_current_SNR().'Teardown')
+      call F()
+    endif
+  catch /Assert: abort/
+    call s:errors.add(a:file, 
+          \ matchstr(v:exception, '.*(\zs\d\+\ze)'),
+          \ 'Test <'. self.name .'> execution aborted on critical assertion failure')
+  catch /.*/
+    let throwpoint = substitute(v:throwpoint, escape(s:tempfile, '.\'), a:file, 'g')
+    let msg = throwpoint . ': '.v:exception
+    call s:errors.add(a:file, 0, msg)
+  finally
+    unlet s:errors.crt_test
+  endtry
+endfunction
+
+function! s:AddTest(test_name) dict
+  let test = {
+        \ 'name'   : a:test_name,
+        \ 'run'    : function('s:RunOneTest'),
+        \ 'failed' : 0
+        \ }
+  call add(self.tests, test)
+endfunction
+
+"------------------------------------------------------------------------
+" Suites wrapper functions
+
+function! s:ConcludeSuite() dict
+  call s:errors.add(self.file,0,  'SUITE<'. self.name.'> '. s:errors.nb_success .'/'. s:errors.nb_tests . ' tests successfully executed.')
+  " call add(s:errors.qf, 'SUITE<'. self.name.'> '. s:rrors.nb_success .'/'. s:errors.nb_tests . ' tests successfully executed.')
+endfunction
+
+function! s:PlayTests(...) dict
+  call s:Verbose('Execute tests: '.join(a:000, ', '))
+  call filter(self.tests, 'index(a:000, v:val.name) >= 0')
+  call s:Verbose('Keeping tests: '.join(self.tests, ', '))
+endfunction
+
+function! s:IgnoreTests(...) dict
+  call s:Verbose('Ignoring tests: '.join(a:000, ', '))
+  call filter(self.tests, 'index(a:000, v:val.name) < 0')
+  call s:Verbose('Keeping tests: '.join(self.tests, ', '))
+endfunction
+
+function! s:errors.new_suite(file) dict
+  let suite = {
+        \ 'scriptname'      : s:tempfile,
+        \ 'file'            : a:file,
+        \ 'tests'           : [],
+        \ 'snr'             : '',
+        \ 'add_test'        : function('s:AddTest'),
+        \ 'conclude'        : function('s:ConcludeSuite'),
+        \ 'play'            : function('s:PlayTests'),
+        \ 'ignore'          : function('s:IgnoreTests'),
+        \ 'nb_tests_failed' : 0
+        \ }
+  call add(self.suites, suite)
+  let self.crt_suite = suite
+  return suite
+endfunction
+
+function! s:errors.set_suite(suite_name) dict
+  let a = s:Decode(a:suite_name)
+  call s:Verbose('SUITE <- '. a.expr, 1)
+  call s:Verbose('SUITE NAME: '. a:suite_name, 2)
+  call self.add(a.file, a.line, 'SUITE <'. a.expr .'>')
+  let self.crt_suite.name = a.expr
+  " let self.crt_suite.file = a.file
 endfunction
 
 "------------------------------------------------------------------------
 function! s:Decode(expression)
-  let filename = matchstr(a:expression, '^\(\\ \|\\\\\|\S\)\+')
-  let expr = strpart(a:expression, strlen(filename)+1)
+  let filename = s:errors.crt_suite.file
+  let expr = a:expression
   let line = matchstr(expr, '^\d\+')
   " echo filename.':'.line
   let expr = strpart(expr, strlen(line)+1)
@@ -200,13 +277,13 @@ function! s:PrepareFile(file)
 
   let lines = readfile(a:file)
   let need_to_know_SNR = 0
-  let suite = s:errors.new_suite(s:tempfile)
+  let suite = s:errors.new_suite(a:file)
 
   let no = 0
   let last_line = len(lines)
   while no < last_line
     if lines[no] =~ '^\s*'.s:k_commands.'\>'
-      let lines[no] = substitute(lines[no], '^\s*'.s:k_commands.'!\= \zs', file.' '.(no+1).' ', '')
+      let lines[no] = substitute(lines[no], '^\s*'.s:k_commands.'!\= \zs', (no+1).' ', '')
 
     elseif lines[no] =~ '^\s*function!\=\s\+s:Test'
       let test_name = matchstr(lines[no], '^\s*function!\=\s\+s:\zsTest\S\{-}\ze(')
@@ -232,7 +309,7 @@ function! s:PrepareFile(file)
   " => takes care of s:variables, s:Functions(), and l:variables
   call extend(lines, s:k_local_evaluate, 0)
 
-  call writefile(lines, s:tempfile)
+  call writefile(lines, suite.scriptname)
   let g:lines=lines
 endfunction
 
@@ -241,9 +318,12 @@ function! s:RunOneFile(file)
     call s:PrepareFile(a:file)
     exe 'source '.s:tempfile
 
+    let s:errors.nb_tests = len(s:errors.crt_suite.tests)
     if !empty(s:errors.crt_suite.tests)
+      call s:Verbose('Executing tests: '.join(s:errors.crt_suite.tests, ', '))
       for test in s:errors.crt_suite.tests
-        call s:RunOneTest(test, a:file)
+        call test.run(a:file)
+        let s:errors.nb_success += 1 - test.failed
       endfor
     endif
 
@@ -256,6 +336,7 @@ function! s:RunOneFile(file)
     let msg = throwpoint . ': '.v:exception
     call s:errors.add(a:file, 0, msg)
   finally
+    call s:errors.crt_suite.conclude()
     " Never! the name must not be used by other Vim sessions
     " call delete(s:tempfile)
   endtry
@@ -270,53 +351,35 @@ function! s:DefineCommands()
         \ let s:ok = matchstr(<q-args>, '^\d\+\ze\s\+.*')                         |
         \ let s:errors.nb_asserts += 1                                            |
         \ if ! s:ok                                                               |
+        \    call s:errors.set_test_failed()                                      |
         \    call s:errors.add(s:a.file, s:a.line, 'assertion failed: '.s:a.expr) |
         \    if '<bang>' == '!'                                                   |
         \       throw "Assert: abort (".s:a.line.")"                              |
         \    endif                                                                |
         \ else                                                                    |
-        \    let s:errors.nb_success += 1                                         |
+        \    let s:errors.nb_successful_asserts += 1                              |
         \ endif
 
   command! -nargs=1 Comment
         \ let s:a = s:Decode(<q-args>)                                            |
         \ call s:errors.add(s:a.file, s:a.line, s:a.expr)
   command! -nargs=1 UTSuite call s:errors.set_suite(<q-args>)
+
+  command! -nargs=+ UTPlay   call s:errors.crt_suite.play(<f-args>)
+  command! -nargs=+ UTIgnore call s:errors.crt_suite.ignore(<f-args>)
 endfunction
 
 function! s:UnDefineCommands()
-  delcommand Assert
-  delcommand UTAssert
-  command! -nargs=* UTSuite :echoerr "Use :UTRun and not :source on this script"<bar>finish
+  silent! delcommand Assert
+  silent! delcommand UTAssert
+  silent! command! -nargs=* UTSuite :echoerr "Use :UTRun and not :source on this script"<bar>finish
+  silent! delcommand UTPlay
+  silent! delcommand UTIgnore
 endfunction
 "------------------------------------------------------------------------
 " # callbacks {{{2
 function! lh#UT#callback_set_SNR(SNR)
   call s:errors.set_current_SNR(a:SNR)
-endfunction
-
-function! s:RunOneTest(test_name, file)
-  try
-    if has_key(s:errors.crt_suite, 'setup')
-      let F = function(s:errors.get_current_SNR().'Setup')
-      call F()
-    endif
-    let F = function(s:errors.get_current_SNR().a:test_name)
-    call F()
-    if has_key(s:errors.crt_suite, 'teardown')
-      let F = function(s:errors.get_current_SNR().'Teardown')
-      call F()
-    endif
-  catch /Assert: abort/
-    call s:errors.add(a:file, 
-          \ matchstr(v:exception, '.*(\zs\d\+\ze)'),
-          \ 'Test <'. a:test_name .'> execution aborted on critical assertion failure')
-  catch /.*/
-    let throwpoint = substitute(v:throwpoint, escape(s:tempfile, '.\'), a:file, 'g')
-    let msg = throwpoint . ': '.v:exception
-    call s:errors.add(a:file, 0, msg)
-  finally
-  endtry
 endfunction
 
 " # Main function {{{2
@@ -332,7 +395,13 @@ function! lh#UT#Run(bang,...)
     call s:DefineCommands()
 
     " 3- run every test
+    let rtp = '.,'.&rtp
+    let files = []
     for file in a:000
+      call extend(files, lh#path#GlobAsList(rtp, file))
+    endfor
+
+    for file in files
       call s:RunOneFile(file)
     endfor
   finally
@@ -347,3 +416,4 @@ endfunction
 let &cpo=s:cpo_save
 "=============================================================================
 " vim600: set fdm=marker:
+" VIM: let g:UTfiles='tests/lh/UT*.vim'
