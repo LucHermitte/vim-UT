@@ -43,7 +43,7 @@ Assert s:One() == 1
 
 "------------------------------------------------------------------------
 function! s:TestOK()
-  Comment TestOK
+  Comment "TestOK"
   Assert! 1 == 1
   Assert 1 == 1
   Assert repeat('1', 5) == '11111'
@@ -52,14 +52,14 @@ endfunction
 
 "------------------------------------------------------------------------
 function! s:TestCriticalNOK()
-  Comment TestCriticalNOK
+  Comment "TestCriticalNOK"
   Assert! 1 == 0
   Assert repeat('1', 5) == '1111'
 endfunction
 
 "------------------------------------------------------------------------
 function! s:TestNOK()
-  Comment TestNOK
+  Comment "TestNOK"
   Assert 0 == 1
   Assert repeat('1', 5) == '1111'
 endfunction

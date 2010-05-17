@@ -37,14 +37,14 @@ function! s:Teardown()
 endfunction
 
 function! s:TestSetup()
-  Comment First test where s:v1 and g:v2 are set to 1
+  Comment "First test weither s:v1 and g:v2 are set to 1"
   " Assert0 s:v1 == 1
   Assert s:v1 == 1
   Assert s:v2 == 1
 endfunction
 
 function! s:TestTeardown()
-  Comment Second test where only s:v1 is incremented, while g:v2 is set to 1
+  Comment "Second test weither only s:v1 is incremented, while g:v2 is set to 1"
   Assert s:v1 == 1
   Assert s:v2 == 2
 endfunction

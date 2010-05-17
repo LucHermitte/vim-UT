@@ -2,8 +2,9 @@
 " $Id$
 " File:		ftplugin/vim/vim_UT.vim                              {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://hermitte.free.fr/vim/>
-" Version:	0.0.2
+"		<URL:http://code.google.com/p/lh-vim/>
+let s:k_version = 003
+" Version:	0.0.3
 " Created:	20th Feb 2009
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -22,7 +23,7 @@
 if &cp || (exists("b:loaded_ftplug_vim_UT") && !exists('g:force_reload_ftplug_vim_UT'))
   finish
 endif
-let b:loaded_ftplug_vim_UT = 002
+let b:loaded_ftplug_vim_UT = s:k_version
 let s:cpo_save=&cpo
 set cpo&vim
 " Avoid local reinclusion }}}2
@@ -32,7 +33,7 @@ set cpo&vim
 
 nnoremap <buffer> <silent> <Plug>UTMake :call <sid>UTMake()<cr>
 
-let s:key = lh#option#Get('UTMake_key', '<F7>')
+let s:key = lh#option#get('UTMake_key', '<F7>')
 exe 'imap <buffer> '.s:key.' <c-\><c-n><Plug>UTMake'
 exe 'vmap <buffer> '.s:key.' <c-\><c-n><Plug>UTMake'
 exe 'nmap <buffer> '.s:key.' <Plug>UTMake'
@@ -44,18 +45,13 @@ if &cp || (exists("g:loaded_ftplug_vim_UT") && !exists('g:force_reload_ftplug_vi
   let &cpo=s:cpo_save
   finish
 endif
-let g:loaded_ftplug_vim_UT = 002
+let g:loaded_ftplug_vim_UT = s:k_version
 " Avoid global reinclusion }}}2
 "------------------------------------------------------------------------
 " Functions {{{2
-" Note: most filetype-global functions are best placed into
-" autoload/«your-initials»/vim/«vim_UT».vim
-" Keep here only the functions are are required when the ftplugin is
-" loaded, like functions that help building a vim-menu for this
-" ftplugin.
 
 function! s:UTMake()
-  let files = lh#option#Get('UTfiles', '%')
+  let files = lh#option#get('UTfiles', '%')
   echo 'update|source '.expand('%').'|UTRun '.files
   update
   so%
