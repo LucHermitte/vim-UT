@@ -3,8 +3,8 @@
 " File:		mk-UT.vim
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://hermitte.free.fr/vim/>
-" Version:	0.0.2
-let s:version = '0.0.2'
+" Version:	0.0.3
+let s:version = '0.0.3'
 " Created:	19th Feb 2009
 " Last Update:	$Date$
 "------------------------------------------------------------------------

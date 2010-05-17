@@ -2,25 +2,25 @@
 " $Id$
 " File:         autoload/lh/UT.vim                                {{{1
 " Author:       Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"               <URL:http://hermitte.free.fr/vim/>
-" Version:      0.0.2
+"               <URL:http://code.google.com/p/lh-vim/>
+" Version:      0.0.3
 " Created:      11th Feb 2009
 " Last Update:  $Date$
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim 
 " 
 "------------------------------------------------------------------------
-" Installation: «install details»
+" Installation: 
+" 	Drop this file into {rtp}/autoload/lh/
 " History:      
-" Strongly inspired by Tom Link's tAssert plugin: all its functions are
-" compatible with this framework.
+" 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
+" 	compatible with this framework.
 "
 " Features:
 " - Assertion failures are reported in the quickfix window
 " - Assertion syntax is simple, check Tom Link's suite, it's the same
 " - Supports banged :Assert! to stop processing a given test on failed
 "   assertions
-" - One file == a suite
 " - All the s:Test* functions of a suite are executed (almost) independently
 "   (i.e., a critical :Assert! failure will stop the Test of the function, and
 "   lh#UT will proceed to the next s:Test function
@@ -29,14 +29,16 @@
 " - A suite == a file
 " - Several s:TestXxx() per suite
 " - +optional s:Setup(), s:Teardown()
-" - Supports :Comments
+" - Supports :Comment's ; :Comment takes an expression to evaluate
 " - s:LocalFunctions(), s:variables, and l:variables are supported
-" - Takes advantage of BuildToolsWrapper's :COpen command if installed
-" - Count successful tests and not successful assertions
+" - Takes advantage of BuildToolsWrapper's :Copen command if installed
+" - Count successful tests (and not successful assertions)
 " - Short-cuts to run the Unit Tests associated to a given vim script
 "   Relies on: Let-Modeline/local_vimrc/Project to set g:UTfiles (space
 "   separated list of glob-able paths), and on lh-vim-lib#path
 " - Command to exclude, or specify the tests to play => UTPlay, UTIgnore
+" - Option g:UT_print_test to display, on assertion failure, the current test
+"   name with the assertion failed.
 "
 " TODO:         
 " - Always execute s:Teardown() -- move its call to a :finally bloc
@@ -110,6 +112,7 @@ function! s:errors.clear() dict
   let self.nb_success            = 0
   let self.nb_tests              = 0
   let self.suites                = []
+  let self.crt_suite             = {}
 endfunction
 
 function! s:errors.display() dict
@@ -135,7 +138,11 @@ function! s:errors.get_current_SNR()
 endfunction
 
 function! s:errors.add(FILE, LINE, message) dict
-  let msg = a:FILE.':'.a:LINE.':'.a:message
+  let msg = a:FILE.':'.a:LINE.':'
+  if lh#option#get('UT_print_test', 0, 'g') && has_key(s:errors, 'crt_test')
+    let msg .= '['. s:errors.crt_test.name .'] '
+  endif
+  let msg.= a:message
   call add(self.qf, msg)
 endfunction
 
@@ -228,7 +235,8 @@ function! s:errors.set_suite(suite_name) dict
   let a = s:Decode(a:suite_name)
   call s:Verbose('SUITE <- '. a.expr, 1)
   call s:Verbose('SUITE NAME: '. a:suite_name, 2)
-  call self.add(a.file, a.line, 'SUITE <'. a.expr .'>')
+  " call self.add(a.file, a.line, 'SUITE <'. a.expr .'>')
+  call self.add(a.file,0, 'SUITE <'. a.expr .'>')
   let self.crt_suite.name = a.expr
   " let self.crt_suite.file = a.file
 endfunction
@@ -343,12 +351,24 @@ function! s:RunOneFile(file)
 endfunction
 
 "------------------------------------------------------------------------
+function! s:StripResultAndDecode(expr)
+  " Function needed because of an odd degenerescence of vim: commands
+  " eventually loose their '\'
+  return s:Decode(matchstr(a:expr, '^\d\+\s\+\zs.*')) 
+endfunction
+
+function! s:GetResult(expr)
+  " Function needed because of an odd degenerescence of vim: commands
+  " eventually loose their '\'
+  return matchstr(a:expr, '^\d\+\ze\s\+.*') 
+endfunction
+
 function! s:DefineCommands()
   " NB: variables are already interpreted, make it a function
   " command! -nargs=1 Assert call s:Assert(<q-args>)
   command! -bang -nargs=1 UTAssert 
-        \ let s:a = s:Decode(matchstr(<q-args>, '^\d\+\s\+\zs.*'))                |
-        \ let s:ok = matchstr(<q-args>, '^\d\+\ze\s\+.*')                         |
+        \ let s:a = s:StripResultAndDecode(<q-args>)                |
+        \ let s:ok = s:GetResult(<q-args>)                         |
         \ let s:errors.nb_asserts += 1                                            |
         \ if ! s:ok                                                               |
         \    call s:errors.set_test_failed()                                      |
@@ -362,7 +382,7 @@ function! s:DefineCommands()
 
   command! -nargs=1 Comment
         \ let s:a = s:Decode(<q-args>)                                            |
-        \ call s:errors.add(s:a.file, s:a.line, s:a.expr)
+        \ call s:errors.add(s:a.file, s:a.line, eval(s:a.expr))
   command! -nargs=1 UTSuite call s:errors.set_suite(<q-args>)
 
   command! -nargs=+ UTPlay   call s:errors.crt_suite.play(<f-args>)
@@ -383,7 +403,7 @@ function! lh#UT#callback_set_SNR(SNR)
 endfunction
 
 " # Main function {{{2
-function! lh#UT#Run(bang,...)
+function! lh#UT#run(bang,...)
   " 1- clear the errors table
   let must_keep = a:bang == "!"
   if ! must_keep
@@ -398,7 +418,10 @@ function! lh#UT#Run(bang,...)
     let rtp = '.,'.&rtp
     let files = []
     for file in a:000
-      call extend(files, lh#path#GlobAsList(rtp, file))
+      let lFile = lh#path#glob_as_list(rtp, file)
+      if len(lFile) > 0
+	call add(files, lFile[0])
+      endif
     endfor
 
     for file in files
