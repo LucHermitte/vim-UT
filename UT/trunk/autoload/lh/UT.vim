@@ -15,6 +15,7 @@
 " History:      
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v0.0.4: patch from Motoya Kurotsu
 "
 " Features:
 " - Assertion failures are reported in the quickfix window
@@ -327,6 +328,7 @@ function! s:RunOneFile(file)
     exe 'source '.s:tempfile
 
     let s:errors.nb_tests = len(s:errors.crt_suite.tests)
+    " let s:errors.nb_success = 0 " Motoya Kurotsu's patch
     if !empty(s:errors.crt_suite.tests)
       call s:Verbose('Executing tests: '.join(s:errors.crt_suite.tests, ', '))
       for test in s:errors.crt_suite.tests
