@@ -2,9 +2,9 @@
 " $Id$
 " File:		mk-UT.vim
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://hermitte.free.fr/vim/>
-" Version:	0.0.3
-let s:version = '0.0.3'
+"		<URL:http://code.google.com/p/lh-vim/>
+" Version:	0.0.4
+let s:version = '0.0.4'
 " Created:	19th Feb 2009
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -19,6 +19,7 @@ finally
   let &rtp = save_rtp
 endtry
 finish
+UT-addon-info.txt
 UT.README
 autoload/lh/UT.vim
 autoload/should.vim
