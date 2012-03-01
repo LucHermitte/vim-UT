@@ -1,4 +1,4 @@
-*UT.txt*                Unit Testing Framework for Vim (v0.0.3)
+*UT.txt*                Unit Testing Framework for Vim (v0.0.4)
                         For Vim version 7+.    Last change: $Date$
 
                         By Luc Hermitte
@@ -159,7 +159,7 @@ You may also want to have a look at:
 
 
 ------------------------------------------------------------------------------
- © Luc Hermitte, 2010, http://code.google.com/p/lh-vim/
+ © Luc Hermitte, 2010-2012, http://code.google.com/p/lh-vim/
  $Id$
  VIM: let b:VS_language = 'american' 
  vim:ts=8:sw=4:tw=80:fo=tcq2:isk=!-~,^*,^\|,^\":ft=help:fdm=marker:
