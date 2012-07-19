@@ -14,3 +14,5 @@ More Help At  : http://code.google.com/p/lh-vim/wiki/UT
 Vim script#???: http://www.vim.org/scripts/script.php?script_id=???
 Repository    :
 	svn checkout http://lh-vim.googlecode.com/svn/UT/trunk UT
+VAM           :
+	http://code.google.com/p/lh-vim/source/browse/UT/trunk/UT-addon-info.txt
