@@ -3,7 +3,9 @@
 " File:         autoload/lh/UT.vim                                {{{1
 " Author:       Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "               <URL:http://code.google.com/p/lh-vim/>
-" Version:      0.0.3
+" License:      GPLv3 with exceptions
+"               <URL:http://code.google.com/p/lh-vim/wiki/License>
+" Version:      0.0.5
 " Created:      11th Feb 2009
 " Last Update:  $Date$
 "------------------------------------------------------------------------
@@ -16,6 +18,7 @@
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
 " 	v0.0.4: patch from Motoya Kurotsu
+" 	v0.0.5: displays exceptions thrown in :Assert.
 "
 " Features:
 " - Assertion failures are reported in the quickfix window
@@ -262,10 +265,21 @@ endfunction
 let s:k_commands = '\%(Assert\|UTSuite\|Comment\)'
 let s:k_local_evaluate = [
       \ 'command! -bang -nargs=1 Assert '.
-      \ 'let s:a = lh#UT#callback_decode(<q-args>) |'.
-      \ 'let s:ok = !empty(eval(s:a.expr))  |'.
-      \ 'exe "UTAssert<bang> ".s:ok." ".(<f-args>)|'
+      \ 'let s:a = lh#UT#callback_decode(<q-args>)                                          |'.
+      \ 'try                                                                                |'. 
+      \ '    let s:ok = !empty(eval(s:a.expr))                                              |'.
+      \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>)                                      |'.
+      \ 'catch /.*/                                                                         |'.
+      \ '    let s:ok = 0                                                                   |'.
+      \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>." -- exception thrown: ".v:exception) |'.
+      \ 'endtry                                                                             |'
       \]
+" let s:k_local_evaluate = [
+      " \ 'command! -bang -nargs=1 Assert '.
+      " \ 'let s:a = lh#UT#callback_decode(<q-args>) |'.
+      " \ 'let s:ok = !empty(eval(s:a.expr))  |'.
+      " \ 'exe "UTAssert<bang> ".s:ok." ".(<f-args>)|'
+      " \]
 let s:k_getSNR   = [
       \ 'function! s:getSNR()',
       \ '  if !exists("s:SNR")',
@@ -369,8 +383,8 @@ function! s:DefineCommands()
   " NB: variables are already interpreted, make it a function
   " command! -nargs=1 Assert call s:Assert(<q-args>)
   command! -bang -nargs=1 UTAssert 
-        \ let s:a = s:StripResultAndDecode(<q-args>)                |
-        \ let s:ok = s:GetResult(<q-args>)                         |
+        \ let s:a = s:StripResultAndDecode(<q-args>)                              |
+        \ let s:ok = s:GetResult(<q-args>)                                        |
         \ let s:errors.nb_asserts += 1                                            |
         \ if ! s:ok                                                               |
         \    call s:errors.set_test_failed()                                      |
