@@ -5,7 +5,7 @@
 "               <URL:http://code.google.com/p/lh-vim/>
 " License:      GPLv3 with exceptions
 "               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:      0.0.5
+" Version:      0.0.6
 " Created:      11th Feb 2009
 " Last Update:  $Date$
 "------------------------------------------------------------------------
@@ -19,6 +19,7 @@
 " 	compatible with this framework.
 " 	v0.0.4: patch from Motoya Kurotsu
 " 	v0.0.5: displays exceptions thrown in :Assert.
+" 	v0.0.6: exception callstack displayed
 "
 " Features:
 " - Assertion failures are reported in the quickfix window
@@ -271,7 +272,7 @@ let s:k_local_evaluate = [
       \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>)                                      |'.
       \ 'catch /.*/                                                                         |'.
       \ '    let s:ok = 0                                                                   |'.
-      \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>." -- exception thrown: ".v:exception) |'.
+      \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>." -- exception thrown: ".v:exception." at: ".v:throwpoint) |'.
       \ 'endtry                                                                             |'
       \]
 " let s:k_local_evaluate = [
