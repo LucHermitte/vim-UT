@@ -5,21 +5,23 @@
 "               <URL:http://code.google.com/p/lh-vim/>
 " License:      GPLv3 with exceptions
 "               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:      0.0.6
+" Version:      0.0.7
 " Created:      11th Feb 2009
 " Last Update:  $Date$
 "------------------------------------------------------------------------
-" Description:  Yet Another Unit Testing Framework for Vim 
-" 
+" Description:  Yet Another Unit Testing Framework for Vim
+"
 "------------------------------------------------------------------------
-" Installation: 
+" Installation:
 " 	Drop this file into {rtp}/autoload/lh/
-" History:      
+" History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
 " 	v0.0.4: patch from Motoya Kurotsu
 " 	v0.0.5: displays exceptions thrown in :Assert.
 " 	v0.0.6: exception callstack displayed
+" 	v0.0.7: bug fix to support "UTRun %", whatever the current path & &rtp
+" 	        are.
 "
 " Features:
 " - Assertion failures are reported in the quickfix window
@@ -45,7 +47,7 @@
 " - Option g:UT_print_test to display, on assertion failure, the current test
 "   name with the assertion failed.
 "
-" TODO:         
+" TODO:
 " - Always execute s:Teardown() -- move its call to a :finally bloc
 " - Test in UTF-8 (because of <SNR>_ injection)
 " - test under windows (where paths have spaces, etc)
@@ -60,7 +62,7 @@
 "   well -- a correct distinction of both parameters will be tricky with
 "   regexes ; using functions will loose either the name, or the value in case
 "   of local/script variables use ; we need macros /à la C/...
-" - Support Embedded comments like for instance: 
+" - Support Embedded comments like for instance:
 "   Assert 1 == 1 " 1 must value 1
 " - Ways to test buffers produced
 " }}}1
@@ -91,7 +93,7 @@ endfunction
 "------------------------------------------------------------------------
 " # Internal functions {{{2
 "------------------------------------------------------------------------
- 
+
 " Sourcing a script doesn't imply a new entry with its name in :scriptnames
 " As a consequence, the easiest thing to do is to reuse the same file over and
 " over in a given vim session.
@@ -156,7 +158,7 @@ function! s:errors.add_test(test_name) dict
 endfunction
 
 function! s:errors.set_test_failed() dict
-  if has_key(self, 'crt_test') 
+  if has_key(self, 'crt_test')
     let self.crt_test.failed = 1
   endif
 endfunction
@@ -178,7 +180,7 @@ function! s:RunOneTest(file) dict
       call F()
     endif
   catch /Assert: abort/
-    call s:errors.add(a:file, 
+    call s:errors.add(a:file,
           \ matchstr(v:exception, '.*(\zs\d\+\ze)'),
           \ 'Test <'. self.name .'> execution aborted on critical assertion failure')
   catch /.*/
@@ -267,7 +269,7 @@ let s:k_commands = '\%(Assert\|UTSuite\|Comment\)'
 let s:k_local_evaluate = [
       \ 'command! -bang -nargs=1 Assert '.
       \ 'let s:a = lh#UT#callback_decode(<q-args>)                                          |'.
-      \ 'try                                                                                |'. 
+      \ 'try                                                                                |'.
       \ '    let s:ok = !empty(eval(s:a.expr))                                              |'.
       \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>)                                      |'.
       \ 'catch /.*/                                                                         |'.
@@ -286,7 +288,7 @@ let s:k_getSNR   = [
       \ '  if !exists("s:SNR")',
       \ '    let s:SNR=matchstr(expand("<sfile>"), "<SNR>\\d\\+_\\zegetSNR$")',
       \ '  endif',
-      \ '  return s:SNR', 
+      \ '  return s:SNR',
       \ 'endfunction',
       \ 'call lh#UT#callback_set_SNR(s:getSNR())',
       \ ''
@@ -295,7 +297,7 @@ let s:k_getSNR   = [
 function! s:PrepareFile(file)
   if !filereadable(a:file)
     call s:errors.add('-', 0, a:file . " can not be read")
-    return 
+    return
   endif
   let file = escape(a:file, ' \')
 
@@ -338,7 +340,7 @@ function! s:PrepareFile(file)
 endfunction
 
 function! s:RunOneFile(file)
-  try 
+  try
     call s:PrepareFile(a:file)
     exe 'source '.s:tempfile
 
@@ -353,7 +355,7 @@ function! s:RunOneFile(file)
     endif
 
   catch /Assert: abort/
-    call s:errors.add(a:file, 
+    call s:errors.add(a:file,
           \ matchstr(v:exception, '.*(\zs\d\+\ze)'),
           \ 'Suite <'. s:errors.crt_suite .'> execution aborted on critical assertion failure')
   catch /.*/
@@ -371,19 +373,19 @@ endfunction
 function! s:StripResultAndDecode(expr)
   " Function needed because of an odd degenerescence of vim: commands
   " eventually loose their '\'
-  return s:Decode(matchstr(a:expr, '^\d\+\s\+\zs.*')) 
+  return s:Decode(matchstr(a:expr, '^\d\+\s\+\zs.*'))
 endfunction
 
 function! s:GetResult(expr)
   " Function needed because of an odd degenerescence of vim: commands
   " eventually loose their '\'
-  return matchstr(a:expr, '^\d\+\ze\s\+.*') 
+  return matchstr(a:expr, '^\d\+\ze\s\+.*')
 endfunction
 
 function! s:DefineCommands()
   " NB: variables are already interpreted, make it a function
   " command! -nargs=1 Assert call s:Assert(<q-args>)
-  command! -bang -nargs=1 UTAssert 
+  command! -bang -nargs=1 UTAssert
         \ let s:a = s:StripResultAndDecode(<q-args>)                              |
         \ let s:ok = s:GetResult(<q-args>)                                        |
         \ let s:errors.nb_asserts += 1                                            |
@@ -427,7 +429,7 @@ function! lh#UT#run(bang,...)
     call s:errors.clear()
   endif
 
-  try 
+  try
     " 2- define commands
     call s:DefineCommands()
 
@@ -435,7 +437,7 @@ function! lh#UT#run(bang,...)
     let rtp = '.,'.&rtp
     let files = []
     for file in a:000
-      let lFile = lh#path#glob_as_list(rtp, file)
+      let lFile = lh#path#is_absolute_path(file) ? [file] : lh#path#glob_as_list(rtp, file)
       if len(lFile) > 0
 	call add(files, lFile[0])
       endif
