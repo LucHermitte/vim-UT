@@ -3,13 +3,13 @@
 " File:		mk-UT.vim
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://code.google.com/p/lh-vim/>
-" Version:	0.0.6
-let s:version = '0.0.6'
+" Version:	0.0.7
+let s:version = '0.0.7'
 " Created:	19th Feb 2009
 " Last Update:	$Date$
 "------------------------------------------------------------------------
 cd <sfile>:p:h
-try 
+try
   let save_rtp = &rtp
   let &rtp = expand('<sfile>:p:h:h').','.&rtp
   exe '22,$MkVimball! UT-'.s:version
