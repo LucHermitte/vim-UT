@@ -3,8 +3,8 @@
 " File:		plugin/UT.vim                                        {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://code.google.com/p/lh-vim/>
-let s:k_version = 003
-" Version:	0.0.3
+let s:k_version = 010
+" Version:	0.1.0
 " Created:	11th Feb 2009
 " Last Update:	$Date$
 "------------------------------------------------------------------------
@@ -15,7 +15,6 @@ let s:k_version = 003
 " 	Drop the file into {rtp}/plugin/lh/
 " History:	
 " 	Strongly inspired by Tom Link's tAssert
-" TODO:		«missing features»
 " }}}1
 "=============================================================================
 

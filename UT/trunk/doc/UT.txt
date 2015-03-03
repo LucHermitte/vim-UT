@@ -1,4 +1,4 @@
-*UT.txt*                Unit Testing Framework for Vim (v0.0.4)
+*UT.txt*                Unit Testing Framework for Vim (v0.1.0)
                         For Vim version 7+.    Last change: $Date$
 
                         By Luc Hermitte
@@ -57,12 +57,17 @@ One of the first lines must contain >
   UTSuite Some intelligible name for the suite
 <
                                                     *:Assert*
+                                                    *:AssertTxt()*
 Then you are free to directly assert anything you wish as long as it is a
 valid vim |expression|, e.g. >
     Assert 1 > 2
     Assert 1 > 0
     Assert s:foo > s:Bar(g:var + 28) / strlen("foobar")
+    AssertTxt! (s:foo > s:Bar(g:var+28),
+        \, s:foo." isn't bigger than s:Bar(".g:var."+28)")
 or to define as many independent tests as you wish.
+
+If banged, the test will be aborted on an assertion failure.
 
                                                     *:Comment*
 Comments may be added to the |quickfix| report thanks to the |:Comment|
@@ -74,7 +79,7 @@ critically fails, the next test will be executed, e.g. >
       let var = SomeFucntion()
       Assert! type(var) == type(0)
       Assert var < 42
-      Assert! var > 0 
+      Assert! var > 0
 
       " Some other code that won't be executed if the previous assertion failed
       let i = var / 42.0
@@ -151,15 +156,15 @@ information about the line number where the assertion is made.
 OTHER TESTS RELATED PLUGINS FOR VIM                  *UT-others*       {{{1
 You may also want to have a look at:
 - Tom Link's |tAssert| plugin
-  http://www.vim.org/scripts/script.php?script_id=1730 
+  http://www.vim.org/scripts/script.php?script_id=1730
 - Staale Flock's |vimUnit| plugin
-  http://www.vim.org/scripts/script.php?script_id=1125 
+  http://www.vim.org/scripts/script.php?script_id=1125
 - Meikel Brandmeyer's |vimTAP| plugin
-  http://www.vim.org/scripts/script.php?script_id=2213 
+  http://www.vim.org/scripts/script.php?script_id=2213
 
 
 ------------------------------------------------------------------------------
- © Luc Hermitte, 2010-2012, http://code.google.com/p/lh-vim/
+ © Luc Hermitte, 2010-2015, http://code.google.com/p/lh-vim/
  $Id$
- VIM: let b:VS_language = 'american' 
+ VIM: let b:VS_language = 'american'
  vim:ts=8:sw=4:tw=80:fo=tcq2:isk=!-~,^*,^\|,^\":ft=help:fdm=marker:

@@ -5,7 +5,7 @@
 "               <URL:http://code.google.com/p/lh-vim/>
 " License:      GPLv3 with exceptions
 "               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:      0.0.7
+" Version:      0.1.0
 " Created:      11th Feb 2009
 " Last Update:  $Date$
 "------------------------------------------------------------------------
@@ -22,6 +22,8 @@
 " 	v0.0.6: exception callstack displayed
 " 	v0.0.7: bug fix to support "UTRun %", whatever the current path & &rtp
 " 	        are.
+" 	v0.1.0: New assertion command :AssertTxt(expr, message) that let choose
+" 	        the assertion failure message.
 "
 " Features:
 " - Assertion failures are reported in the quickfix window
@@ -166,7 +168,7 @@ endfunction
 "------------------------------------------------------------------------
 " Tests wrapper functions
 
-function! s:RunOneTest(file) dict
+function! s:RunOneTest(file) dict abort
   try
     let s:errors.crt_test = self
     if has_key(s:errors.crt_suite, 'setup')
@@ -264,6 +266,18 @@ function! lh#UT#callback_decode(expression)
   return s:Decode(a:expression)
 endfunction
 
+function! lh#UT#assert_txt(bang, line, expr, msg)
+  let filename = s:errors.crt_suite.file
+  let s:a = { 'file':filename, 'line':a:line, 'expr':a:expr, 'msg':a:msg}
+  try
+    let s:ok = !empty(eval(s:a.expr))
+    exe "UTAssert".a:bang." ".s:ok." ".a:line." ".a:msg
+  catch /.*/
+    let s:ok = 0
+    exe "UTAssert".a:bang." ".s:ok." ".a:line." ".(a:msg." -- exception thrown: ".v:exception." at: ".v:throwpoint)
+  endtry
+endfunction
+
 "------------------------------------------------------------------------
 let s:k_commands = '\%(Assert\|UTSuite\|Comment\)'
 let s:k_local_evaluate = [
@@ -308,7 +322,9 @@ function! s:PrepareFile(file)
   let no = 0
   let last_line = len(lines)
   while no < last_line
-    if lines[no] =~ '^\s*'.s:k_commands.'\>'
+    if lines[no] =~ '^\s*AssertTxt\>'
+      let lines[no] = substitute(lines[no], '^\s*\zsAssertTxt\s*\(!\=\)\s*(', 'call lh#UT#assert_txt("\1", '.(no+1).',', '')
+    elseif lines[no] =~ '^\s*'.s:k_commands.'\>'
       let lines[no] = substitute(lines[no], '^\s*'.s:k_commands.'!\= \zs', (no+1).' ', '')
 
     elseif lines[no] =~ '^\s*function!\=\s\+s:Test'
@@ -342,6 +358,7 @@ endfunction
 function! s:RunOneFile(file)
   try
     call s:PrepareFile(a:file)
+    let g:lh#UT#crt_file = a:file
     exe 'source '.s:tempfile
 
     let s:errors.nb_tests = len(s:errors.crt_suite.tests)
