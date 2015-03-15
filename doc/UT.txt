@@ -164,7 +164,6 @@ You may also want to have a look at:
 
 
 ------------------------------------------------------------------------------
- © Luc Hermitte, 2010-2015, http://code.google.com/p/lh-vim/
- $Id$
+ © Luc Hermitte, 2010-2015, http://github.com/LucHermitte/vim-UT
  VIM: let b:VS_language = 'american'
  vim:ts=8:sw=4:tw=80:fo=tcq2:isk=!-~,^*,^\|,^\":ft=help:fdm=marker:

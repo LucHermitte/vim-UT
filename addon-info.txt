@@ -1,0 +1,12 @@
+{
+  "name" : "UT",
+  "version" : "dev",
+  "author" : "Luc Hermitte <http://github.com/LucHermitte>",
+  "maintainer" : "Luc Hermitte <http://github.com/LucHermitte>",
+  "repository" : {"type": "git", "url": "git@github.com:LucHermitte/vim-UT.git"},
+  "dependencies" : {
+      "lh-vim-lib" : {"type" : "git", "url" : "git@github.com:LucHermitte/lh-vim-lib.git"}
+  },
+  "description" : "Unit Testing Framework for Vim",
+  "homepage" : "http://github.com/LucHermitte/vim-UT"
+}
