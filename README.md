@@ -36,7 +36,7 @@ function s:Test1()
   let var = SomeFunction()
   Assert! type(var) == type(0)
   Assert var < 42
-  Assert! var > 0 
+  Assert! var > 0
 
   " Some other code that won't be executed if the previous assertion failed
   " /*the wiki does not recognizes vim comments*/
@@ -103,3 +103,5 @@ Bundle 'LucHermitte/vim-UT'
   * Ben Fritz's [vim-2html-test](http://code.google.com/p/vim-2html-test/) plugin,
   * Ingo Karkat's [runVimTests plugin](http://www.vim.org/scripts/script.php?script_id=2565),
   * See also Paul Mucur article's: [Testing Vim Plugins on Travis CI with RSpec and Vimrunner](http://mudge.github.com/2012/04/18/testing-vim-plugins-on-travis-ci-with-rspec-and-vimrunner.html)
+
+[![Project Stats](https://www.openhub.net/p/21020/widgets/project_thin_badge.gif)](https://www.openhub.net/p/21020)
