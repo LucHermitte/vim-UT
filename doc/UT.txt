@@ -1,5 +1,5 @@
-*UT.txt*                Unit Testing Framework for Vim (v0.1.0)
-                        For Vim version 7+.    Last change: $Date$
+*UT.txt*                Unit Testing Framework for Vim (v0.1.1)
+                        For Vim version 7+.    Last change: 18th Apr 2015
 
                         By Luc Hermitte
                         hermitte {at} free {dot} fr
@@ -58,6 +58,11 @@ One of the first lines must contain >
 <
                                                     *:Assert*
                                                     *:AssertTxt()*
+                                                    *:AssertEquals()*
+                                                    *:AssertDiffers()*
+                                                    *:AssertIs()*
+                                                    *:AssertMatches()*
+                                                    *:AssertRelation()*
 Then you are free to directly assert anything you wish as long as it is a
 valid vim |expression|, e.g. >
     Assert 1 > 2
@@ -65,6 +70,12 @@ valid vim |expression|, e.g. >
     Assert s:foo > s:Bar(g:var + 28) / strlen("foobar")
     AssertTxt! (s:foo > s:Bar(g:var+28),
         \, s:foo." isn't bigger than s:Bar(".g:var."+28)")
+    AssertEquals('a', 'a')
+    AssertDiffers('a', 'b')
+    let dict = {}
+    AssertIs(dict, dict)
+    AssertMatch('abc', 'a')
+    AssertRelation(1, '<', 2)
 or to define as many independent tests as you wish.
 
 If banged, the test will be aborted on an assertion failure.

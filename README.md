@@ -29,6 +29,15 @@ UTSuite Some intelligible name for the suite
 Assert 1 > 2
 Assert 1 > 0
 Assert s:foo > s:Bar(g:var + 28) / strlen("foobar")
+
+AssertTxt! (s:foo > s:Bar(g:var+28),
+        \, s:foo." isn't bigger than s:Bar(".g:var."+28)")
+AssertEquals('a', 'a')
+AssertDiffers('a', 'b')
+let dict = {}
+AssertIs(dict, dict)
+AssertMatch('abc', 'a')
+AssertRelation(1, '<', 2)
 ```
   * or to define as many independent tests as you wish. A test is a function with a name starting with `s:Test`. Even if a test critically fails, the next test will be executed, e.g.
 ```
@@ -63,7 +72,6 @@ See:
   * Check UT works fine under windows (where paths have spaces, etc), and on UTF-8 files
   * Simplify `s:errors` functions
   * Merge with Tom Link's tAssert plugin? (the UI is quite different)
-  * `:AssertEquals` that shows the name of both expressions and their values as well -- a correct distinction of both parameters will be tricky with regexes ; using functions will loose either the name, or the value in case of local/script variables use ; we need macros _à la C_...
   * Support Embedded comments like for instance:
 ```
 Assert 1 == 1 " 1 must value 1

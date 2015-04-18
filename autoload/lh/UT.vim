@@ -1,13 +1,12 @@
 "=============================================================================
-" $Id$
 " File:         autoload/lh/UT.vim                                {{{1
 " Author:       Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"               <URL:http://code.google.com/p/lh-vim/>
+"               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:      0.1.0
+" Version:      0.1.1
 " Created:      11th Feb 2009
-" Last Update:  $Date$
+" Last Update:  18th Apr 2015
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -24,6 +23,8 @@
 " 	        are.
 " 	v0.1.0: New assertion command :AssertTxt(expr, message) that let choose
 " 	        the assertion failure message.
+" 	v0.1.1: New assert commands: AssertEquals, AssertDiff, AssertIs,
+" 	AssertMatches, AssertRelation
 "
 " Features:
 " - Assertion failures are reported in the quickfix window
@@ -60,10 +61,6 @@
 "   the file
 " - simplify s:errors functions
 " - merge with Tom Link tAssert plugin? (the UI is quite different)
-" - :AssertEquals that shows the name of both expressions and their values as
-"   well -- a correct distinction of both parameters will be tricky with
-"   regexes ; using functions will loose either the name, or the value in case
-"   of local/script variables use ; we need macros /à la C/...
 " - Support Embedded comments like for instance:
 "   Assert 1 == 1 " 1 must value 1
 " - Ways to test buffers produced
@@ -104,7 +101,7 @@ endfunction
 let s:tempfile = tempname()
 
 "------------------------------------------------------------------------
-" s:errors
+" s:errors {{{4
 let s:errors = {
       \ 'qf'                    : [],
       \ 'crt_suite'             : {},
@@ -114,6 +111,7 @@ let s:errors = {
       \ 'suites'                : []
       \ }
 
+" Function: s:errors.clear() dict {{{4
 function! s:errors.clear() dict
   let self.qf                    = []
   let self.nb_asserts            = 0
@@ -124,6 +122,7 @@ function! s:errors.clear() dict
   let self.crt_suite             = {}
 endfunction
 
+" Function: s:errors.display() dict {{{4
 function! s:errors.display() dict
   let g:errors = self.qf
   cexpr self.qf
@@ -138,14 +137,17 @@ function! s:errors.display() dict
   endif
 endfunction
 
+" Function: s:errors.set_current_SNR(SNR) {{{4
 function! s:errors.set_current_SNR(SNR)
   let self.crt_suite.snr = a:SNR
 endfunction
 
+" Function: s:errors.get_current_SNR() {{{4
 function! s:errors.get_current_SNR()
   return self.crt_suite.snr
 endfunction
 
+" Function: s:errors.add(FILE, LINE, message) dict {{{4
 function! s:errors.add(FILE, LINE, message) dict
   let msg = a:FILE.':'.a:LINE.':'
   if lh#option#get('UT_print_test', 0, 'g') && has_key(s:errors, 'crt_test')
@@ -155,10 +157,12 @@ function! s:errors.add(FILE, LINE, message) dict
   call add(self.qf, msg)
 endfunction
 
+" Function: s:errors.add_test(test_name) dict {{{4
 function! s:errors.add_test(test_name) dict
   call self.add_test(a:test_name)
 endfunction
 
+" Function: s:errors.set_test_failed() dict {{{4
 function! s:errors.set_test_failed() dict
   if has_key(self, 'crt_test')
     let self.crt_test.failed = 1
@@ -166,8 +170,9 @@ function! s:errors.set_test_failed() dict
 endfunction
 
 "------------------------------------------------------------------------
-" Tests wrapper functions
+" Tests wrapper function {{{3
 
+" Function: s:RunOneTest(file) dict abort {{{4
 function! s:RunOneTest(file) dict abort
   try
     let s:errors.crt_test = self
@@ -194,6 +199,7 @@ function! s:RunOneTest(file) dict abort
   endtry
 endfunction
 
+" Function: s:AddTest(test_name) dict {{{4
 function! s:AddTest(test_name) dict
   let test = {
         \ 'name'   : a:test_name,
@@ -204,25 +210,29 @@ function! s:AddTest(test_name) dict
 endfunction
 
 "------------------------------------------------------------------------
-" Suites wrapper functions
+" Suites wrapper functions {{{3
 
+" Function: s:ConcludeSuite() dict {{{4
 function! s:ConcludeSuite() dict
   call s:errors.add(self.file,0,  'SUITE<'. self.name.'> '. s:errors.nb_success .'/'. s:errors.nb_tests . ' tests successfully executed.')
   " call add(s:errors.qf, 'SUITE<'. self.name.'> '. s:rrors.nb_success .'/'. s:errors.nb_tests . ' tests successfully executed.')
 endfunction
 
+" Function: s:PlayTests(...) dict {{{4
 function! s:PlayTests(...) dict
   call s:Verbose('Execute tests: '.join(a:000, ', '))
   call filter(self.tests, 'index(a:000, v:val.name) >= 0')
   call s:Verbose('Keeping tests: '.join(self.tests, ', '))
 endfunction
 
+" Function: s:IgnoreTests(...) dict {{{4
 function! s:IgnoreTests(...) dict
   call s:Verbose('Ignoring tests: '.join(a:000, ', '))
   call filter(self.tests, 'index(a:000, v:val.name) < 0')
   call s:Verbose('Keeping tests: '.join(self.tests, ', '))
 endfunction
 
+" Function: s:errors.new_suite(file) dict {{{4
 function! s:errors.new_suite(file) dict
   let suite = {
         \ 'scriptname'      : s:tempfile,
@@ -240,6 +250,7 @@ function! s:errors.new_suite(file) dict
   return suite
 endfunction
 
+" Function: s:errors.set_suite(suite_name) dict {{{4
 function! s:errors.set_suite(suite_name) dict
   let a = s:Decode(a:suite_name)
   call s:Verbose('SUITE <- '. a.expr, 1)
@@ -251,6 +262,8 @@ function! s:errors.set_suite(suite_name) dict
 endfunction
 
 "------------------------------------------------------------------------
+" Assert & decode {{{3
+" Function: s:Decode(expression) {{{4
 function! s:Decode(expression)
   let filename = s:errors.crt_suite.file
   let expr = a:expression
@@ -262,11 +275,13 @@ function! s:Decode(expression)
   return res
 endfunction
 
+" Function: lh#UT#callback_decode(expression) {{{4
 function! lh#UT#callback_decode(expression)
   return s:Decode(a:expression)
 endfunction
 
-function! lh#UT#assert_txt(bang, line, expr, msg)
+" Function: lh#UT#assert_txt(bang, line, expr, msg) abort {{{4
+function! lh#UT#assert_txt(bang, line, expr, msg) abort
   let filename = s:errors.crt_suite.file
   let s:a = { 'file':filename, 'line':a:line, 'expr':a:expr, 'msg':a:msg}
   try
@@ -278,7 +293,40 @@ function! lh#UT#assert_txt(bang, line, expr, msg)
   endtry
 endfunction
 
+" Function: lh#UT#assert_equals(bang, line, lhs, rhs) {{{4
+function! lh#UT#assert_equals(bang, line, lhs, rhs) abort
+  return lh#UT#assert_txt(a:bang, a:line, a:lhs == a:rhs,
+        \ string(a:lhs) . ' it not equal to ' . string(a:rhs))
+endfunction
+
+" Function: lh#UT#assert_is(bang, line, lhs, rhs) {{{4
+function! lh#UT#assert_is(bang, line, lhs, rhs) abort
+  return lh#UT#assert_txt(a:bang, a:line, a:lhs is a:rhs,
+        \ string(a:lhs) . ' it not identical to ' . string(a:rhs))
+endfunction
+
+" Function: lh#UT#assert_differs(bang, line, lhs, rhs) {{{4
+function! lh#UT#assert_differs(bang, line, lhs, rhs) abort
+  return lh#UT#assert_txt(a:bang, a:line, a:lhs != a:rhs,
+        \ string(a:lhs) . ' it not different from ' . string(a:rhs))
+endfunction
+
+" Function: lh#UT#assert_matches(bang, line, lhs, rhs) {{{4
+function! lh#UT#assert_matches(bang, line, lhs, rhs) abort
+  return lh#UT#assert_txt(a:bang, a:line, a:lhs =~ a:rhs,
+        \ string(a:lhs) . ' does not match ' . string(a:rhs))
+endfunction
+
+" Function: lh#UT#assert_relation(bang, line, lhs, rel, rhs) {{{4
+function! lh#UT#assert_relation(bang, line, lhs, rel, rhs) abort
+  let expr = string(a:lhs) . ' ' . a:rel . ' ' .string(a:rhs)
+  let ok = eval(expr)
+  return lh#UT#assert_txt(a:bang, a:line, ok, expr)
+endfunction
+
 "------------------------------------------------------------------------
+" Transform file {{{3
+" constants {{{4
 let s:k_commands = '\%(Assert\|UTSuite\|Comment\)'
 let s:k_local_evaluate = [
       \ 'command! -bang -nargs=1 Assert '.
@@ -308,6 +356,7 @@ let s:k_getSNR   = [
       \ ''
       \ ]
 
+" Function: s:PrepareFile(file) {{{4
 function! s:PrepareFile(file)
   if !filereadable(a:file)
     call s:errors.add('-', 0, a:file . " can not be read")
@@ -324,6 +373,22 @@ function! s:PrepareFile(file)
   while no < last_line
     if lines[no] =~ '^\s*AssertTxt\>'
       let lines[no] = substitute(lines[no], '^\s*\zsAssertTxt\s*\(!\=\)\s*(', 'call lh#UT#assert_txt("\1", '.(no+1).',', '')
+
+    elseif lines[no] =~ '^\s*AssertEq\%[uals]\>'
+      let lines[no] = substitute(lines[no], '^\s*\zsAssertEq\%[uals]\s*\(!\=\)\s*(', 'call lh#UT#assert_equals("\1", '.(no+1).',', '')
+
+    elseif lines[no] =~ '^\s*AssertDiff\%[ers]\>'
+      let lines[no] = substitute(lines[no], '^\s*\zsAssertDiff\%[ers]\s*\(!\=\)\s*(', 'call lh#UT#assert_differs("\1", '.(no+1).',', '')
+
+    elseif lines[no] =~ '^\s*AssertIs\>'
+      let lines[no] = substitute(lines[no], '^\s*\zsAssertIs\s*\(!\=\)\s*(', 'call lh#UT#assert_is("\1", '.(no+1).',', '')
+
+    elseif lines[no] =~ '^\s*AssertMatch\%[es]\>'
+      let lines[no] = substitute(lines[no], '^\s*\zsAssertMatch\%[es]\s*\(!\=\)\s*(', 'call lh#UT#assert_matches("\1", '.(no+1).',', '')
+
+    elseif lines[no] =~ '^\s*AssertRel\%[ation]\>'
+      let lines[no] = substitute(lines[no], '^\s*\zsAssertRel\%[ation]\s*\(!\=\)\s*(', 'call lh#UT#assert_relation("\1", '.(no+1).',', '')
+
     elseif lines[no] =~ '^\s*'.s:k_commands.'\>'
       let lines[no] = substitute(lines[no], '^\s*'.s:k_commands.'!\= \zs', (no+1).' ', '')
 
@@ -355,6 +420,7 @@ function! s:PrepareFile(file)
   let g:lines=lines
 endfunction
 
+" Function: s:RunOneFile(file) {{{4
 function! s:RunOneFile(file)
   try
     call s:PrepareFile(a:file)
@@ -387,18 +453,22 @@ function! s:RunOneFile(file)
 endfunction
 
 "------------------------------------------------------------------------
+"{{{3
+" Function: s:StripResultAndDecode(expr) {{{4
 function! s:StripResultAndDecode(expr)
   " Function needed because of an odd degenerescence of vim: commands
   " eventually loose their '\'
   return s:Decode(matchstr(a:expr, '^\d\+\s\+\zs.*'))
 endfunction
 
+" Function: s:GetResult(expr) {{{4
 function! s:GetResult(expr)
   " Function needed because of an odd degenerescence of vim: commands
   " eventually loose their '\'
   return matchstr(a:expr, '^\d\+\ze\s\+.*')
 endfunction
 
+" Function: s:DefineCommands() {{{4
 function! s:DefineCommands()
   " NB: variables are already interpreted, make it a function
   " command! -nargs=1 Assert call s:Assert(<q-args>)
@@ -425,6 +495,7 @@ function! s:DefineCommands()
   command! -nargs=+ UTIgnore call s:errors.crt_suite.ignore(<f-args>)
 endfunction
 
+" Function: s:UnDefineCommands() {{{4
 function! s:UnDefineCommands()
   silent! delcommand Assert
   silent! delcommand UTAssert
