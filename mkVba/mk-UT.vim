@@ -1,12 +1,11 @@
 "=============================================================================
-" $Id$
 " File:		mk-UT.vim
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://code.google.com/p/lh-vim/>
-" Version:	0.1.0
-let s:version = '0.1.0'
+"		<URL:http://github.com/LucHermitte/vim-UT>
+" Version:	0.1.1
+let s:version = '0.1.1'
 " Created:	19th Feb 2009
-" Last Update:	$Date$
+" Last Update:	18th Apr 2015
 "------------------------------------------------------------------------
 cd <sfile>:p:h
 try
