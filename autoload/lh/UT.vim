@@ -3,10 +3,10 @@
 " Author:       Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
-"               <URL:http://code.google.com/p/lh-vim/wiki/License>
-" Version:      0.1.1
+"               <URL:http://github.com/LucHermitte/vim-UT/License.md>
+" Version:      0.1.2
 " Created:      11th Feb 2009
-" Last Update:  18th Apr 2015
+" Last Update:  18th Nov 2015
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -24,7 +24,8 @@
 " 	v0.1.0: New assertion command :AssertTxt(expr, message) that let choose
 " 	        the assertion failure message.
 " 	v0.1.1: New assert commands: AssertEquals, AssertDiff, AssertIs,
-" 	AssertMatches, AssertRelation
+" 	        AssertMatches, AssertRelation
+" 	v0.1.2: Exception callstack decoded (requires lh-vim-lib 3.3.11)
 "
 " Features:
 " - Assertion failures are reported in the quickfix window
@@ -101,6 +102,7 @@ endfunction
 let s:tempfile = tempname()
 
 "------------------------------------------------------------------------
+" Errors {{{3
 " s:errors {{{4
 let s:errors = {
       \ 'qf'                    : [],
@@ -124,8 +126,8 @@ endfunction
 
 " Function: s:errors.display() dict {{{4
 function! s:errors.display() dict
-  let g:errors = self.qf
-  cexpr self.qf
+  " let g:errors = self.qf
+  silent! cexpr self.qf
 
   " Open the quickfix window
   if exists(':Copen')
@@ -133,7 +135,7 @@ function! s:errors.display() dict
     " opened if there is no error
     Copen
   else
-    copen
+    silent! copen
   endif
 endfunction
 
@@ -153,8 +155,10 @@ function! s:errors.add(FILE, LINE, message) dict
   if lh#option#get('UT_print_test', 0, 'g') && has_key(s:errors, 'crt_test')
     let msg .= '['. s:errors.crt_test.name .'] '
   endif
-  let msg.= a:message
+  let message = split(a:message, "\n")
+  let msg.= message[0]
   call add(self.qf, msg)
+  let self.qf += message[1:]
 endfunction
 
 " Function: s:errors.add_test(test_name) dict {{{4
@@ -167,6 +171,19 @@ function! s:errors.set_test_failed() dict
   if has_key(self, 'crt_test')
     let self.crt_test.failed = 1
   endif
+endfunction
+
+" Function: lh#UT#_callstack(throwpoint) {{{3
+function! lh#UT#_callstack(throwpoint) abort
+  let msg = ''
+  " Ignore functions from this script
+  let callstack = filter(lh#exception#callstack(a:throwpoint), 'v:val.script !~ ".*autoload.lh.UT.vim"')
+  for func in callstack
+    " call s:errors.add(func.script, func.pos, '  called from '.(func.fname).'['.(func.offset).']')
+    let script = substitute(func.script, escape(s:tempfile, '.\'), s:errors.crt_suite.file, 'g')
+    let msg .= "\n".(script).':'.(func.pos).': called from '.(func.fname).'['.(func.offset).']'
+  endfor
+  return msg
 endfunction
 
 "------------------------------------------------------------------------
@@ -193,6 +210,7 @@ function! s:RunOneTest(file) dict abort
   catch /.*/
     let throwpoint = substitute(v:throwpoint, escape(s:tempfile, '.\'), a:file, 'g')
     let msg = throwpoint . ': '.v:exception
+    let msg .= lh#UT#_callstack(v:throwpoint)
     call s:errors.add(a:file, 0, msg)
   finally
     unlet s:errors.crt_test
@@ -214,8 +232,10 @@ endfunction
 
 " Function: s:ConcludeSuite() dict {{{4
 function! s:ConcludeSuite() dict
-  call s:errors.add(self.file,0,  'SUITE<'. self.name.'> '. s:errors.nb_success .'/'. s:errors.nb_tests . ' tests successfully executed.')
+  let name = self.name
+  call s:errors.add(self.file, 0,  'SUITE<'. name .'> '. (s:errors.nb_success) .'/'. (s:errors.nb_tests) . ' tests successfully executed.')
   " call add(s:errors.qf, 'SUITE<'. self.name.'> '. s:rrors.nb_success .'/'. s:errors.nb_tests . ' tests successfully executed.')
+  return (s:errors.nb_tests) - (s:errors.nb_success)
 endfunction
 
 " Function: s:PlayTests(...) dict {{{4
@@ -289,7 +309,9 @@ function! lh#UT#assert_txt(bang, line, expr, msg) abort
     exe "UTAssert".a:bang." ".s:ok." ".a:line." ".a:msg
   catch /.*/
     let s:ok = 0
-    exe "UTAssert".a:bang." ".s:ok." ".a:line." ".(a:msg." -- exception thrown: ".v:exception." at: ".v:throwpoint)
+    let msg = (a:msg." -- exception thrown: ".v:exception." at: ".v:throwpoint)
+    let msg .= lh#UT#_callstack(v:throwpoint)
+    exe "UTAssert".a:bang." ".s:ok." ".a:line." ".msg
   endtry
 endfunction
 
@@ -302,6 +324,12 @@ endfunction
 " Function: lh#UT#assert_is(bang, line, lhs, rhs) {{{4
 function! lh#UT#assert_is(bang, line, lhs, rhs) abort
   return lh#UT#assert_txt(a:bang, a:line, a:lhs is a:rhs,
+        \ string(a:lhs) . ' it not identical to ' . string(a:rhs))
+endfunction
+
+" Function: lh#UT#assert_is_not(bang, line, lhs, rhs) {{{4
+function! lh#UT#assert_is_not(bang, line, lhs, rhs) abort
+  return lh#UT#assert_txt(a:bang, a:line, ! (a:lhs is a:rhs),
         \ string(a:lhs) . ' it not identical to ' . string(a:rhs))
 endfunction
 
@@ -330,15 +358,19 @@ endfunction
 let s:k_commands = '\%(Assert\|UTSuite\|Comment\)'
 let s:k_local_evaluate = [
       \ 'command! -bang -nargs=1 Assert '.
-      \ 'let s:a = lh#UT#callback_decode(<q-args>)                                          |'.
-      \ 'try                                                                                |'.
-      \ '    let s:ok = !empty(eval(s:a.expr))                                              |'.
-      \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>)                                      |'.
-      \ 'catch /.*/                                                                         |'.
-      \ '    let s:ok = 0                                                                   |'.
-      \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>." -- exception thrown: ".v:exception." at: ".v:throwpoint) |'.
-      \ 'endtry                                                                             |'
+      \ 'let s:a = lh#UT#callback_decode(<q-args>)                                                                    |'.
+      \ 'try                                                                                                          |'.
+      \ '    let s:ok = !empty(eval(s:a.expr))                                                                        |'.
+      \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>)                                                                |'.
+      \ 'catch /.*/                                                                                                   |'.
+      \ '    let s:ok = 0                                                                                             |'.
+      \ '    let msg  = " -- exception thrown: ".v:exception." at: ".v:throwpoint                                     |'.
+      \ '    let msg .= lh#UT#_callstack(v:throwpoint)                                                                |'.
+      \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>.msg)                                                            |'.
+      \ 'endtry                                                                                                       |'
       \]
+      " \ '    let callstack = lh#exception#callstack(v:throwpoint)                                                |'.
+      " \ '        call s:errors.add(func.script, func.pos, "  called from ".(func.fname)."[".(func.offset)."]")   |'.
 " let s:k_local_evaluate = [
       " \ 'command! -bang -nargs=1 Assert '.
       " \ 'let s:a = lh#UT#callback_decode(<q-args>) |'.
@@ -364,7 +396,7 @@ function! s:PrepareFile(file)
   endif
   let file = escape(a:file, ' \')
 
-  let lines = readfile(a:file)
+  silent! let lines = readfile(a:file)
   let need_to_know_SNR = 0
   let suite = s:errors.new_suite(a:file)
 
@@ -382,6 +414,9 @@ function! s:PrepareFile(file)
 
     elseif lines[no] =~ '^\s*AssertIs\>'
       let lines[no] = substitute(lines[no], '^\s*\zsAssertIs\s*\(!\=\)\s*(', 'call lh#UT#assert_is("\1", '.(no+1).',', '')
+
+    elseif lines[no] =~ '^\s*AssertIsNot\>'
+      let lines[no] = substitute(lines[no], '^\s*\zsAssertIsNot\s*\(!\=\)\s*(', 'call lh#UT#assert_is_not("\1", '.(no+1).',', '')
 
     elseif lines[no] =~ '^\s*AssertMatch\%[es]\>'
       let lines[no] = substitute(lines[no], '^\s*\zsAssertMatch\%[es]\s*\(!\=\)\s*(', 'call lh#UT#assert_matches("\1", '.(no+1).',', '')
@@ -416,19 +451,19 @@ function! s:PrepareFile(file)
   " => takes care of s:variables, s:Functions(), and l:variables
   call extend(lines, s:k_local_evaluate, 0)
 
-  call writefile(lines, suite.scriptname)
-  let g:lines=lines
+  silent call writefile(lines, suite.scriptname)
+  " let g:lines=lines
 endfunction
 
 " Function: s:RunOneFile(file) {{{4
-function! s:RunOneFile(file)
+function! s:RunOneFile(file) abort
   try
-    call s:PrepareFile(a:file)
+    silent call s:PrepareFile(a:file)
     let g:lh#UT#crt_file = a:file
-    exe 'source '.s:tempfile
+    silent exe 'source '.s:tempfile
 
     let s:errors.nb_tests = len(s:errors.crt_suite.tests)
-    " let s:errors.nb_success = 0 " Motoya Kurotsu's patch
+    let s:errors.nb_success = 0 " Motoya Kurotsu's patch
     if !empty(s:errors.crt_suite.tests)
       call s:Verbose('Executing tests: '.join(s:errors.crt_suite.tests, ', '))
       for test in s:errors.crt_suite.tests
@@ -444,9 +479,10 @@ function! s:RunOneFile(file)
   catch /.*/
     let throwpoint = substitute(v:throwpoint, escape(s:tempfile, '.\'), a:file, 'g')
     let msg = throwpoint . ': '.v:exception
+    let msg .= lh#UT#_callstack(v:throwpoint)
     call s:errors.add(a:file, 0, msg)
   finally
-    call s:errors.crt_suite.conclude()
+    return s:errors.crt_suite.conclude()
     " Never! the name must not be used by other Vim sessions
     " call delete(s:tempfile)
   endtry
@@ -510,13 +546,14 @@ function! lh#UT#callback_set_SNR(SNR)
 endfunction
 
 " # Main function {{{2
-function! lh#UT#run(bang,...)
+function! lh#UT#run(bang,...) abort
   " 1- clear the errors table
   let must_keep = a:bang == "!"
   if ! must_keep
     call s:errors.clear()
   endif
 
+  let nok = 0
   try
     " 2- define commands
     call s:DefineCommands()
@@ -532,14 +569,18 @@ function! lh#UT#run(bang,...)
     endfor
 
     for file in files
-      call s:RunOneFile(file)
+      let nok = (s:RunOneFile(file) > 0) || nok
     endfor
+  catch /.*/
+    let nok = 1
   finally
     call s:UnDefineCommands()
     call s:errors.display()
   endtry
 
   " 3- Open the quickfix
+  " 4- Return the result
+  return [! nok, s:errors.qf]
 endfunction
 
 "------------------------------------------------------------------------

@@ -1,16 +1,15 @@
 "=============================================================================
-" $Id$
 " File:		tests/lh/UT.vim                                      {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://hermitte.free.fr/vim/>
+"		<URL:http://github.com/LucHermitte/vim-UT>
 " Version:	0.0.1
 " Created:	11th Feb 2009
-" Last Update:	$Date$
+" Last Update:	18th Nov 2015
 "------------------------------------------------------------------------
-" Description:	UnitTests for the UT plugin. 
+" Description:	UnitTests for the UT plugin.
 " - Tests global assertions
 " - Tests assertions definied in tests (functions s:Test)
-" 
+"
 "------------------------------------------------------------------------
 " Installation:	«install details»
 " History:	«history»
@@ -22,6 +21,7 @@ let s:cpo_save=&cpo
 set cpo&vim
 "------------------------------------------------------------------------
 UTSuite [lh#UT] Testing global and local assertions
+
 
 Assert 1 == 1
 Assert 1 != 42
@@ -64,7 +64,13 @@ function! s:TestNOK()
   Assert repeat('1', 5) == '1111'
 endfunction
 
-function! s:Foo()
+function! s:Foo() abort
+  throw "No way!!!"
+endfunction
+
+function! s:TestException()
+  Comment "Test Exception"
+  Assert s:Foo() == 1
 endfunction
 "------------------------------------------------------------------------
 "------------------------------------------------------------------------

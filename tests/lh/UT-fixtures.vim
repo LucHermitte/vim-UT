@@ -1,8 +1,7 @@
 "=============================================================================
-" $Id$
 " File:		tests/lh/UT-fixtures.vim                                  {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://hermitte.free.fr/vim/>
+"		<URL:http://github.com/LucHermitte/vim-UT>
 " Version:	0.0.1
 " Created:	11th Feb 2009
 " Last Update:	$Date$

@@ -1,8 +1,7 @@
 "=============================================================================
-" $Id$
 " File:		plugin/UT.vim                                        {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://code.google.com/p/lh-vim/>
+"		<URL:http://github.com/LucHermitte/vim-UT>
 let s:k_version = 010
 " Version:	0.1.0
 " Created:	11th Feb 2009
