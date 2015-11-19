@@ -4,7 +4,7 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      0.1.3
+" Version:      0.1.4
 " Created:      11th Feb 2009
 " Last Update:  19th Nov 2015
 "------------------------------------------------------------------------
@@ -16,19 +16,21 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
-" 	v0.0.4: patch from Motoya Kurotsu
-" 	v0.0.5: displays exceptions thrown in :Assert.
-" 	v0.0.6: exception callstack displayed
-" 	v0.0.7: bug fix to support "UTRun %", whatever the current path & &rtp
-" 	        are.
-" 	v0.1.0: New assertion command :AssertTxt(expr, message) that let choose
-" 	        the assertion failure message.
-" 	v0.1.1: New assert commands: AssertEquals, AssertDiff, AssertIs,
-" 	        AssertMatches, AssertRelation
+" 	v0.1.4: Verbosity in qf window can be controled with lh#UT#print_test_names()
+" 	v0.1.3: Test name automatically deduced when :UTSuite isn't called.
 " 	v0.1.2: Exception callstack decoded (requires lh-vim-lib 3.3.11)
 " 	        AssertIsNot added
 " 	        lh#UT#run() returns a list that can be exploited from
 " 	        RSpec+vimrunner
+" 	v0.1.1: New assert commands: AssertEquals, AssertDiff, AssertIs,
+" 	        AssertMatches, AssertRelation
+" 	v0.1.0: New assertion command :AssertTxt(expr, message) that let choose
+" 	        the assertion failure message.
+" 	v0.0.7: bug fix to support "UTRun %", whatever the current path & &rtp
+" 	        are.
+" 	v0.0.6: exception callstack displayed
+" 	v0.0.5: displays exceptions thrown in :Assert.
+" 	v0.0.4: patch from Motoya Kurotsu
 "
 " Features:
 " - Assertion failures are reported in the quickfix window
@@ -80,6 +82,11 @@ set cpo&vim
 " # Debug {{{2
 function! lh#UT#verbose(level)
   let s:verbose = a:level
+endfunction
+
+let s:print_test_names = 0
+function! lh#UT#print_test_names()
+  let s:print_test_names = 1
 endfunction
 
 function! s:Verbose(expr, ...)
@@ -217,7 +224,9 @@ function! s:RunOneTest(file) dict abort
     call s:errors.add(a:file, 0, msg)
   finally
     unlet s:errors.crt_test
-    call s:errors.add(a:file, 0, "Test <".(self.name)."> executed ". (self.failed ? 'but failed' : 'with success') )
+    if s:print_test_names
+      call s:errors.add(a:file, 0, "Test <".(self.name)."> executed ". (self.failed ? 'but failed' : 'with success') )
+    endif
   endtry
 endfunction
 
@@ -325,25 +334,25 @@ endfunction
 " Function: lh#UT#assert_equals(bang, line, lhs, rhs) {{{4
 function! lh#UT#assert_equals(bang, line, lhs, rhs) abort
   return lh#UT#assert_txt(a:bang, a:line, a:lhs == a:rhs,
-        \ string(a:lhs) . ' it not equal to ' . string(a:rhs))
+        \ string(a:lhs) . ' is not equal to ' . string(a:rhs))
 endfunction
 
 " Function: lh#UT#assert_is(bang, line, lhs, rhs) {{{4
 function! lh#UT#assert_is(bang, line, lhs, rhs) abort
   return lh#UT#assert_txt(a:bang, a:line, a:lhs is a:rhs,
-        \ string(a:lhs) . ' it not identical to ' . string(a:rhs))
+        \ string(a:lhs) . ' is not identical to ' . string(a:rhs))
 endfunction
 
 " Function: lh#UT#assert_is_not(bang, line, lhs, rhs) {{{4
 function! lh#UT#assert_is_not(bang, line, lhs, rhs) abort
   return lh#UT#assert_txt(a:bang, a:line, ! (a:lhs is a:rhs),
-        \ string(a:lhs) . ' it not identical to ' . string(a:rhs))
+        \ string(a:lhs) . ' is not identical to ' . string(a:rhs))
 endfunction
 
 " Function: lh#UT#assert_differs(bang, line, lhs, rhs) {{{4
 function! lh#UT#assert_differs(bang, line, lhs, rhs) abort
   return lh#UT#assert_txt(a:bang, a:line, a:lhs != a:rhs,
-        \ string(a:lhs) . ' it not different from ' . string(a:rhs))
+        \ string(a:lhs) . ' is not different from ' . string(a:rhs))
 endfunction
 
 " Function: lh#UT#assert_matches(bang, line, lhs, rhs) {{{4
