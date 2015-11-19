@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      0.1.2
+" Version:      0.1.3
 " Created:      11th Feb 2009
-" Last Update:  18th Nov 2015
+" Last Update:  19th Nov 2015
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -26,6 +26,9 @@
 " 	v0.1.1: New assert commands: AssertEquals, AssertDiff, AssertIs,
 " 	        AssertMatches, AssertRelation
 " 	v0.1.2: Exception callstack decoded (requires lh-vim-lib 3.3.11)
+" 	        AssertIsNot added
+" 	        lh#UT#run() returns a list that can be exploited from
+" 	        RSpec+vimrunner
 "
 " Features:
 " - Assertion failures are reported in the quickfix window
@@ -125,7 +128,7 @@ function! s:errors.clear() dict
 endfunction
 
 " Function: s:errors.display() dict {{{4
-function! s:errors.display() dict
+function! s:errors.display() dict abort
   " let g:errors = self.qf
   silent! cexpr self.qf
 
@@ -214,6 +217,7 @@ function! s:RunOneTest(file) dict abort
     call s:errors.add(a:file, 0, msg)
   finally
     unlet s:errors.crt_test
+    call s:errors.add(a:file, 0, "Test <".(self.name)."> executed ". (self.failed ? 'but failed' : 'with success') )
   endtry
 endfunction
 
@@ -265,6 +269,9 @@ function! s:errors.new_suite(file) dict
         \ 'ignore'          : function('s:IgnoreTests'),
         \ 'nb_tests_failed' : 0
         \ }
+  " Default name, in case UTSuite is not called
+  let suite.name = fnamemodify(suite.file, ':t:r')
+
   call add(self.suites, suite)
   let self.crt_suite = suite
   return suite
@@ -478,7 +485,7 @@ function! s:RunOneFile(file) abort
           \ 'Suite <'. s:errors.crt_suite .'> execution aborted on critical assertion failure')
   catch /.*/
     let throwpoint = substitute(v:throwpoint, escape(s:tempfile, '.\'), a:file, 'g')
-    let msg = throwpoint . ': '.v:exception
+    let msg = ': '.v:exception.' @ ' . throwpoint
     let msg .= lh#UT#_callstack(v:throwpoint)
     call s:errors.add(a:file, 0, msg)
   finally
@@ -547,14 +554,15 @@ endfunction
 
 " # Main function {{{2
 function! lh#UT#run(bang,...) abort
-  " 1- clear the errors table
-  let must_keep = a:bang == "!"
-  if ! must_keep
-    call s:errors.clear()
-  endif
-
-  let nok = 0
+  let nok = 1
+  let qf = []
   try
+    " 1- clear the errors table
+    let must_keep = a:bang == "!"
+    if ! must_keep
+      call s:errors.clear()
+    endif
+
     " 2- define commands
     call s:DefineCommands()
 
@@ -568,19 +576,24 @@ function! lh#UT#run(bang,...) abort
       endif
     endfor
 
+    let nok = 0
     for file in files
       let nok = (s:RunOneFile(file) > 0) || nok
     endfor
   catch /.*/
     let nok = 1
   finally
-    call s:UnDefineCommands()
-    call s:errors.display()
+    try
+      call s:UnDefineCommands()
+      " 3- Open the quickfix
+      call s:errors.display()
+      let qf = s:errors.qf
+    finally
+      " 4- Return the result
+      return [! nok, qf]
+    endtry
   endtry
 
-  " 3- Open the quickfix
-  " 4- Return the result
-  return [! nok, s:errors.qf]
 endfunction
 
 "------------------------------------------------------------------------
