@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      0.1.4
+" Version:      0.2.0
 " Created:      11th Feb 2009
-" Last Update:  19th Nov 2015
+" Last Update:  20th Nov 2015
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,8 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v0.2.0: Better integration with vimrunner+rspec
+" 	        lh#run#check() will help
 " 	v0.1.4: Verbosity in qf window can be controled with lh#UT#print_test_names()
 " 	v0.1.3: Test name automatically deduced when :UTSuite isn't called.
 " 	v0.1.2: Exception callstack decoded (requires lh-vim-lib 3.3.11)
@@ -563,15 +565,24 @@ endfunction
 
 " # Main function {{{2
 function! lh#UT#run(bang,...) abort
-  let nok = 1
-  let qf = []
+  " 1- clear the errors table?
+  let must_keep = a:bang == "!"
+
+  " 2- Call the internal checking function
+  call call('lh#UT#check', [must_keep]+a:000) " cannot fail
+
+  " 3- Open the quickfix
+  call s:errors.display()
+endfunction
+
+" Function: lh#UT#check([testnames...]) {{{3
+" @throw None
+function! lh#UT#check(must_keep, ...) abort
   try
     " 1- clear the errors table
-    let must_keep = a:bang == "!"
-    if ! must_keep
+    if ! a:must_keep
       call s:errors.clear()
     endif
-
     " 2- define commands
     call s:DefineCommands()
 
@@ -591,18 +602,14 @@ function! lh#UT#run(bang,...) abort
     endfor
   catch /.*/
     let nok = 1
-  finally
-    try
-      call s:UnDefineCommands()
-      " 3- Open the quickfix
-      call s:errors.display()
-      let qf = s:errors.qf
-    finally
-      " 4- Return the result
-      return [! nok, qf]
-    endtry
   endtry
 
+  " 4- Clear the commands
+  call s:UnDefineCommands()
+
+  " 5- Return the result
+  let qf = s:errors.qf
+  return [! nok, qf]
 endfunction
 
 "------------------------------------------------------------------------

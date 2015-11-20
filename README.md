@@ -1,8 +1,10 @@
-# Introduction
+# vim-UT [![Project Stats](https://www.openhub.net/p/21020/widgets/project_thin_badge.gif)](https://www.openhub.net/p/21020)
+
+## Introduction
 
 _UT_ is another Test Unit Framework for Vim, which main particularity is to fill the |quickfix| window with the assertion failures.
 
-# Features
+## Features
   * Assertion failures are reported in the quickfix window
   * Assertion syntax is simple, check Tom Link's suite, it's the same
   * Supports banged `:Assert!` to stop processing a given test on failed assertions
@@ -14,11 +16,17 @@ _UT_ is another Test Unit Framework for Vim, which main particularity is to fill
   * Supports `:Comments`
   * `s:LocalFunctions()`, `s:variables`, and `l:variables` are supported
   * Takes advantage of [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)'s `:COpen` command if installed
-  * Count successful tests and not successful assertions
+  * Count successful tests and failed assertions
   * Short-cuts to run the Unit Tests associated to a given vim script; Relies on: [Let-Modeline](http://github.com/LucHermitte/lh-misc/blob/master/plugin/let-modeline.vim)/[local\_vimrc](http://github.com/LucHermitte/local_vimrc)/[Project](http://www.vim.org/scripts/script.php?script_id=69) to set `g:UTfiles` (space separated list of glob-able paths), and on [`lh-vim-lib#path`](http://github.com/LucHermitte/lh-vim-lib)
   * Command to exclude, or specify the tests to play => `:UTPlay`, `UTIgnore`
+  * [Helper scripts](doc/rspec-integration.md) are provided to help integration
+    with vimrunner+rspec. See examples of use in
+    [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) and
+    [lh-brackets](http://github.com/LucHermitte/lh-brackets).
+  * Callstack is decoded and expanded in the quickfix window on uncaught
+    exceptions.
 
-### Usage
+#### Usage
   * Create a new vim script, it will be a Unit Testing Suite.
   * One of the first lines must contain
 ```
@@ -61,13 +69,13 @@ endfunction
   * If you wish to see a clean-up function executed after each test, define the `s:Teardown()` function.
   * Now run `:UTRun` of your test script (filename), and ... debug your failed assertions.
 
-#### Examples
+##### Examples
 See:
   * [tests/lh/UT.vim](tests/lh/UT.vim) for a classical test,
   * [tests/lh/UT-fixtures.vim](tests/lh/UT-fixtures.vim) for a test with fixtures.
 
 
-### To Do
+#### To Do
   * Add `&efm` for VimL errors like the one produced by `:Assert 0 + [0]`
   * Check UT works fine under windows (where paths have spaces, etc), and on UTF-8 files
   * Simplify `s:errors` functions
@@ -81,17 +89,22 @@ Assert 1 == 1 " 1 must value 1
   * Find a way to prevent the potential script scope pollution
 
 
-# Design Choices
+## Design Choices
   * The assertions supported by this plugin are expected to be made in a Unit Testing file, they are not to be used in regular VimL scripts as a _Design by Contract_ tool. Check Thomas Link's plugin, it is much more suited for that kind of assertions.
 
   * In order to be able to produce the quickfix entries, the plugin first parses the Unit Test file to complete all `:Assert` occurrences with extra information about the line number where the assertion is made.
 
 
-# Installation
+## Installation
   * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib)
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install vim-UT (this is the preferred method because of the dependencies)
 ```vim
 ActivateAddons UT
+```
+  *  or with [vim-flavor](http://github.com/kana/vim-flavor), which also
+     handles dependencies
+```
+flavor LucHermitte/vim-UT
 ```
   * or you can clone the git repositories
 ```vim
@@ -104,12 +117,13 @@ Bundle 'LucHermitte/lh-vim-lib'
 Bundle 'LucHermitte/vim-UT'
 ```
 
-# Other Tests related plugins for Vim
+## Other Tests related plugins for Vim
   * Tom Link's [tAssert plugin](http://www.vim.org/scripts/script.php?script_id=1730), and [spec\_vim plugin](https://github.com/tomtom/spec_vim),
   * Staale Flock's [vimUnit plugin](http://www.vim.org/scripts/script.php?script_id=1125),
   * Meikel Brandmeyer's [vimTAP plugin](http://www.vim.org/scripts/script.php?script_id=2213),
   * Ben Fritz's [vim-2html-test](http://code.google.com/p/vim-2html-test/) plugin,
   * Ingo Karkat's [runVimTests plugin](http://www.vim.org/scripts/script.php?script_id=2565),
-  * See also Paul Mucur article's: [Testing Vim Plugins on Travis CI with RSpec and Vimrunner](http://mudge.github.com/2012/04/18/testing-vim-plugins-on-travis-ci-with-rspec-and-vimrunner.html)
+  * See also Paul Mucur article's: [Testing Vim Plugins on Travis CI with RSpec and Vimrunner](http://mudge.github.com/2012/04/18/testing-vim-plugins-on-travis-ci-with-rspec-and-vimrunner.html),
+  * Andrew Radev's [vimrunner](http://github.com/AndrewRadev/vimrunner),
+  * Kana's [vim-spec](http://github.com/kana/vim-spec)
 
-[![Project Stats](https://www.openhub.net/p/21020/widgets/project_thin_badge.gif)](https://www.openhub.net/p/21020)
