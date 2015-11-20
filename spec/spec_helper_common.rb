@@ -7,17 +7,6 @@ require 'rspec/expectations'
 
 # SimpleCov.start
 
-RSpec::Matchers.define :be_successful do
-  match do |actual|
-    actual[1].empty? or expect(actual[0]).to eq 1
-  end
-  failure_message do |actual|
-    # pp actual
-    # pp actual[1].empty?
-    actual[1].join("\n")
-  end
-end
-
 Vimrunner::RSpec.configure do |config|
   config.reuse_server = true
 
