@@ -1,20 +1,21 @@
 # encoding: UTF-8
 require_relative './spec_helper_common'
 require 'pp'
+require 'support/vim_matchers'
 
 RSpec.describe "unit tests" do
   # after(:all) do
     # vim.kill
   # end
 
-  describe "Check dependent plugins are available" do
+  describe "Check dependent plugins are available", :deps => true do
       it "Has vim-UT" do
           expect(vim.echo('&rtp')).to match(/vim-UT/)
-          expect(vim.command("scriptnames")).to match(/plugin.UT\.vim/)
+          expect(/plugin.UT\.vim/).to be_sourced
       end
   end
 
-  describe "Check all tests" do
+  describe "Check all tests", :unit_tests => true do
       files = Dir.glob('./tests/**/*.vim')
       files.each{ |file|
           it "[#{file}] runs fine" do
