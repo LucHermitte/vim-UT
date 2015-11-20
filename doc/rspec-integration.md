@@ -12,7 +12,7 @@ I provide a few files in order to automatically run vim-UT tests located in
 You'll need a `VimFlavor` file in your `{yourpluginpath}/test` directory that
 contains.
 ```
-flavor 'LucHermitte/vim-UT', '>= 0.2.0'
+flavor 'LucHermitte/vim-UT', '>= 0.2.1'
 ```
 Note: you don't want to have your plugin to always depend on vim-flavor. Only
 your tests will need it.
@@ -33,6 +33,14 @@ task :install do
 end
 ```
 
+You'll also need to inject the correst `LOAD_PATH` to rspec
+```.rspec
+--color
+--require spec_helper
+--format documentation
+-I ~/.vim-flavor/repos/LucHermitte_vim-UT/spec
+```
+
 You'll also need a `spec_helper.rb` file in your `spec` directory. The file can
 be empty.
 
@@ -51,7 +59,7 @@ flavor 'LucHermitte/vim-UT', '>= 0.2.0'
 
 #### Rakefile
 
-```
+```Rakefile
 #!/usr/bin/env rake
 
 require 'rspec/core/rake_task'
@@ -82,7 +90,7 @@ end
 
 #### Gemfile
 
-```Gemfile
+```Gem
 source 'https://rubygems.org'
 
 gem 'rspec', '~> 3.1.0'
@@ -103,6 +111,14 @@ before_install: sudo apt-get install vim-gtk
 before_script:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
+```
+
+#### .rspec
+```.rspec
+--color
+--require spec_helper
+--format documentation
+-I ~/.vim-flavor/repos/LucHermitte_vim-UT/spec
 ```
 
 
