@@ -2,6 +2,10 @@
 
 module Support
   module Vim
+    def clear_buffer
+      vim.normal('ggdG')
+    end
+
     def set_file_contents(string)
       write_file(filename, string)
       vim.edit!(filename)
