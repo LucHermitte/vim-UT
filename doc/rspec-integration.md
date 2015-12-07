@@ -12,7 +12,7 @@ I provide a few files in order to automatically run vim-UT tests located in
 You'll need a `VimFlavor` file in your `{yourpluginpath}/test` directory that
 contains.
 ```
-flavor 'LucHermitte/vim-UT', '>= 0.2.1'
+flavor 'LucHermitte/vim-UT', '>= 0.3.0'
 ```
 Note: you don't want to have your plugin to always depend on vim-flavor. Only
 your tests will need it.
@@ -33,7 +33,7 @@ task :install do
 end
 ```
 
-You'll also need to inject the correst `LOAD_PATH` to rspec
+You'll also need to inject the correct `LOAD_PATH` to rspec
 ```.rspec
 --color
 --require spec_helper
@@ -44,6 +44,10 @@ You'll also need to inject the correst `LOAD_PATH` to rspec
 You'll also need a `spec_helper.rb` file in your `spec` directory. The file can
 be empty.
 
+If your tests requires a plugin that is not loaded by default, add a file named
+`extra_plugins.txt` in `spec` directory that has on each line: the name of the
+plugin suite, and the path to the script to source with `:runtime`.
+
 _Et voilà!_
 
 
@@ -51,13 +55,13 @@ _Et voilà!_
 
 Here is a more complete set of files I use
 
-#### tests/VimFlavor
+#### `tests/VimFlavor`
 
 ```
-flavor 'LucHermitte/vim-UT', '>= 0.2.0'
+flavor 'LucHermitte/vim-UT', '>= 0.3.0'
 ```
 
-#### Rakefile
+#### `Rakefile`
 
 ```Rakefile
 #!/usr/bin/env rake
@@ -88,7 +92,7 @@ task :install do
 end
 ```
 
-#### Gemfile
+#### `Gemfile`
 
 ```Gem
 source 'https://rubygems.org'
@@ -99,21 +103,25 @@ gem 'rake', '~> 10.3.2'
 gem 'vim-flavor', '~> 2.1.1'
 ```
 
-#### .travis.yml
+#### `.travis.yml`
 
 ```yml
 language: ruby
 #cache: bundler
+sudo: false
+addons:
+  apt:
+    packages:
+      - vim-gtk
 rvm:
   - 2.1.5 # vim-flavor requires a recent version of ruby
 script: rake ci
-before_install: sudo apt-get install vim-gtk
 before_script:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
 ```
 
-#### .rspec
+#### `.rspec`
 ```.rspec
 --color
 --require spec_helper
@@ -121,6 +129,12 @@ before_script:
 -I ~/.vim-flavor/repos/LucHermitte_vim-UT/spec
 ```
 
+#### `extra_plugins.txt`
+For instance,
+```
+# Definition of :AddStyle
+lh-dev plugin/dev.vim
+```
 
 ### Notes
 
@@ -139,4 +153,4 @@ window with the assertions failed, and even with the callstack in case of
 uncaught exceptions. Then, I can easily navigate to the failed assertion and
 run expression or debug them with my `CTRL-L-x`,`CTRL-L-e`, and `CTRL-L-d`
 mappings from
-[vim_maintain ftplugin](http://github.com/LucHermitte/lh-misc/tree/master/ftplugin/vim/vim_maintain.vim).
+[`vim_set` ftplugin](http://github.com/LucHermitte/lh-misc/tree/master/ftplugin/vim_set.vim).
