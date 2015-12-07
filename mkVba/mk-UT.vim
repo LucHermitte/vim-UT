@@ -2,8 +2,8 @@
 " File:		mk-UT.vim
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://github.com/LucHermitte/vim-UT>
-" Version:	0.2.1
-let s:version = '0.2.1'
+" Version:	0.3.0
+let s:version = '0.3.0'
 " Created:	19th Feb 2009
 " Last Update:	20th Nov 2015
 "------------------------------------------------------------------------
