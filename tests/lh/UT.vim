@@ -2,9 +2,9 @@
 " File:		tests/lh/UT.vim                                      {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://github.com/LucHermitte/vim-UT>
-" Version:	0.0.1
+" Version:	0.4.0
 " Created:	11th Feb 2009
-" Last Update:	18th Nov 2015
+" Last Update:	09th Dec 2015
 "------------------------------------------------------------------------
 " Description:	UnitTests for the UT plugin.
 " - Tests global assertions
@@ -24,17 +24,24 @@ UTSuite [lh#UT] Testing global and local assertions
 
 
 Assert 1 == 1
+:Assert 1 == 1
+AssertEqual(1,1)
+:AssertEqual(1,1)
 Assert 1 != 42
+AssertDiffers(1, 42)
+:AssertDiffers(1, 42)
 Assert 1 < 20
 Assert 1 > 20
 
 let st = "string"
 Assert st =~ 'str'
+AssertMatches(st, 'str')
+:AssertMatches(st, 'str')
 Assert st !~ 'str'
 Assert st == 'str'
 Assert st != 'str'
 Assert st == 0
-" Assert 0 + [0]
+AssertThrows 0 + [0]
 
 function! s:One()
   return 1
@@ -70,9 +77,9 @@ endfunction
 
 function! s:TestException()
   Comment "Test Exception"
+  AssertThrows s:Foo()
   Assert s:Foo() == 1
 endfunction
-"------------------------------------------------------------------------
 "------------------------------------------------------------------------
 let &cpo=s:cpo_save
 "=============================================================================

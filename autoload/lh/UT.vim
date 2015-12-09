@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      0.2.0
+" Version:      0.4.0
 " Created:      11th Feb 2009
-" Last Update:  20th Nov 2015
+" Last Update:  09th Dec 2015
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,8 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v0.4.0: New Assert function AssertThrow
+" 	        'magic' neutral
 " 	v0.2.0: Better integration with vimrunner+rspec
 " 	        lh#run#check() will help
 " 	v0.1.4: Verbosity in qf window can be controled with lh#UT#print_test_names()
@@ -71,7 +73,6 @@
 " - merge with Tom Link tAssert plugin? (the UI is quite different)
 " - Support Embedded comments like for instance:
 "   Assert 1 == 1 " 1 must value 1
-" - Ways to test buffers produced
 " }}}1
 "=============================================================================
 
@@ -339,6 +340,12 @@ function! lh#UT#assert_equals(bang, line, lhs, rhs) abort
         \ string(a:lhs) . ' is not equal to ' . string(a:rhs))
 endfunction
 
+" Function: lh#UT#assert_differs(bang, line, lhs, rhs) {{{4
+function! lh#UT#assert_differs(bang, line, lhs, rhs) abort
+  return lh#UT#assert_txt(a:bang, a:line, a:lhs != a:rhs,
+        \ string(a:lhs) . ' is not different from ' . string(a:rhs))
+endfunction
+
 " Function: lh#UT#assert_is(bang, line, lhs, rhs) {{{4
 function! lh#UT#assert_is(bang, line, lhs, rhs) abort
   return lh#UT#assert_txt(a:bang, a:line, a:lhs is a:rhs,
@@ -349,12 +356,6 @@ endfunction
 function! lh#UT#assert_is_not(bang, line, lhs, rhs) abort
   return lh#UT#assert_txt(a:bang, a:line, ! (a:lhs is a:rhs),
         \ string(a:lhs) . ' is not identical to ' . string(a:rhs))
-endfunction
-
-" Function: lh#UT#assert_differs(bang, line, lhs, rhs) {{{4
-function! lh#UT#assert_differs(bang, line, lhs, rhs) abort
-  return lh#UT#assert_txt(a:bang, a:line, a:lhs != a:rhs,
-        \ string(a:lhs) . ' is not different from ' . string(a:rhs))
 endfunction
 
 " Function: lh#UT#assert_matches(bang, line, lhs, rhs) {{{4
@@ -371,9 +372,20 @@ function! lh#UT#assert_relation(bang, line, lhs, rel, rhs) abort
 endfunction
 
 "------------------------------------------------------------------------
+" Function: lh#UT#assert_throws(bang, line, lhs) {{{4
+function! lh#UT#assert_throws(bang, line, lhs) abort
+  try
+    call eval(a:lhs)
+    return lh#UT#assert_txt(a:bang, a:line, 0,
+        \ a:lhs . ' does not throw')
+  catch /.*/
+    " nominal case...
+  endtry
+endfunction
+
 " Transform file {{{3
 " constants {{{4
-let s:k_commands = '\%(Assert\|UTSuite\|Comment\)'
+let s:k_commands = '%(Assert|UTSuite|Comment)'
 let s:k_local_evaluate = [
       \ 'command! -bang -nargs=1 Assert '.
       \ 'let s:a = lh#UT#callback_decode(<q-args>)                                                                    |'.
@@ -421,39 +433,43 @@ function! s:PrepareFile(file)
   let no = 0
   let last_line = len(lines)
   while no < last_line
-    if lines[no] =~ '^\s*AssertTxt\>'
-      let lines[no] = substitute(lines[no], '^\s*\zsAssertTxt\s*\(!\=\)\s*(', 'call lh#UT#assert_txt("\1", '.(no+1).',', '')
+    if lines[no] =~ '\v^\s*:=AssertTxt>'
+      let lines[no] = substitute(lines[no], '^\v\s*\zs:=AssertTxt\s*(!=)\s*\(', 'call lh#UT#assert_txt("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '^\s*AssertEq\%[uals]\>'
-      let lines[no] = substitute(lines[no], '^\s*\zsAssertEq\%[uals]\s*\(!\=\)\s*(', 'call lh#UT#assert_equals("\1", '.(no+1).',', '')
+    elseif lines[no] =~ '\v^\s*:=AssertEq%[uals]>'
+      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertEq%[uals]\s*(!=)\s*\(', 'call lh#UT#assert_equals("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '^\s*AssertDiff\%[ers]\>'
-      let lines[no] = substitute(lines[no], '^\s*\zsAssertDiff\%[ers]\s*\(!\=\)\s*(', 'call lh#UT#assert_differs("\1", '.(no+1).',', '')
+    elseif lines[no] =~ '^\v\s*:=AssertDiff%[ers]>'
+      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertDiff%[ers]\s*(!=)\s*\(', 'call lh#UT#assert_differs("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '^\s*AssertIs\>'
-      let lines[no] = substitute(lines[no], '^\s*\zsAssertIs\s*\(!\=\)\s*(', 'call lh#UT#assert_is("\1", '.(no+1).',', '')
+    elseif lines[no] =~ '^\v\s*:=AssertIs>'
+      let lines[no] = substitute(lines[no], '^\v\s*\zs:=AssertIs\s*(!=)\s*\(', 'call lh#UT#assert_is("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '^\s*AssertIsNot\>'
-      let lines[no] = substitute(lines[no], '^\s*\zsAssertIsNot\s*\(!\=\)\s*(', 'call lh#UT#assert_is_not("\1", '.(no+1).',', '')
+    elseif lines[no] =~ '\v^\s*:=AssertIsNot>'
+      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertIsNot\s*(!=)\s*\(', 'call lh#UT#assert_is_not("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '^\s*AssertMatch\%[es]\>'
-      let lines[no] = substitute(lines[no], '^\s*\zsAssertMatch\%[es]\s*\(!\=\)\s*(', 'call lh#UT#assert_matches("\1", '.(no+1).',', '')
+    elseif lines[no] =~ '\v^\s*:=AssertMatch%[es]>'
+      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertMatch%[es]\s*(!=)\s*\(', 'call lh#UT#assert_matches("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '^\s*AssertRel\%[ation]\>'
-      let lines[no] = substitute(lines[no], '^\s*\zsAssertRel\%[ation]\s*\(!\=\)\s*(', 'call lh#UT#assert_relation("\1", '.(no+1).',', '')
+    elseif lines[no] =~ '\v^\s*:=AssertRel%[ation]>'
+      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertRel%[ation]\s*(!=)\s*\(', 'call lh#UT#assert_relation("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '^\s*'.s:k_commands.'\>'
-      let lines[no] = substitute(lines[no], '^\s*'.s:k_commands.'!\= \zs', (no+1).' ', '')
+    elseif lines[no] =~ '\v^\s*:=AssertTh%[rows]>'
+      " TODO: stringify param 1
+      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertTh%[rows]\s*(!=)\s*(.*)', 'call lh#UT#assert_throws("\1", '.(no+1).', "\2")', '')
 
-    elseif lines[no] =~ '^\s*function!\=\s\+s:Test'
-      let test_name = matchstr(lines[no], '^\s*function!\=\s\+s:\zsTest\S\{-}\ze(')
+    elseif lines[no] =~ '\v^\s*:='.s:k_commands.'>'
+      let lines[no] = substitute(lines[no], '\v^\s*:='.s:k_commands.'!= \zs', (no+1).' ', '')
+
+    elseif lines[no] =~ '\v^\s*:=function!=\s+s:Test'
+      let test_name = matchstr(lines[no], '\v^\s*:=function!=\s+s:\zsTest\S{-}\ze\(')
       call suite.add_test(test_name)
-    elseif lines[no] =~ '^\s*function!\=\s\+s:Teardown'
+    elseif lines[no] =~ '\v^\s*:=function!=\s+s:Teardown'
       let suite.teardown = 1
-    elseif lines[no] =~ '^\s*function!\=\s\+s:Setup'
+    elseif lines[no] =~ '\v^\s*:=function!=\s+s:Setup'
       let suite.setup = 1
     endif
-    if lines[no] =~ '^\s*function!\=\s\+s:'
+    if lines[no] =~ '\v^\s*:=function!=\s+s:'
       let need_to_know_SNR = 1
     endif
     let no += 1

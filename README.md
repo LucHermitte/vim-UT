@@ -46,6 +46,7 @@ let dict = {}
 AssertIs(dict, dict)
 AssertMatch('abc', 'a')
 AssertRelation(1, '<', 2)
+AssertThrows 0 + [0]
 ```
   * or to define as many independent tests as you wish. A test is a function with a name starting with `s:Test`. Even if a test critically fails, the next test will be executed, e.g.
 ```
@@ -77,7 +78,7 @@ See:
 
 #### To Do
   * Add `&efm` for VimL errors like the one produced by `:Assert 0 + [0]`
-  * Check UT works fine under windows (where paths have spaces, etc), and on UTF-8 files
+  * Check UT works fine under windows (where paths have spaces, etc.), and on UTF-8 files
   * Simplify `s:errors` functions
   * Merge with Tom Link's tAssert plugin? (the UI is quite different)
   * Support Embedded comments like for instance:
@@ -104,7 +105,7 @@ ActivateAddons UT
   *  or with [vim-flavor](http://github.com/kana/vim-flavor), which also
      handles dependencies
 ```
-flavor LucHermitte/vim-UT
+flavor 'LucHermitte/vim-UT'
 ```
   * or you can clone the git repositories
 ```vim
