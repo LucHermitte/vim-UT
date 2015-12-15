@@ -107,7 +107,7 @@ gem 'vim-flavor', '~> 2.1.1'
 
 ```yml
 language: ruby
-#cache: bundler
+cache: bundler
 sudo: false
 addons:
   apt:
@@ -115,7 +115,7 @@ addons:
       - vim-gtk
 rvm:
   - 2.1.5 # vim-flavor requires a recent version of ruby
-script: rake ci
+script: bundle exec rake ci
 before_script:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
