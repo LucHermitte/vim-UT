@@ -2,10 +2,10 @@
 " File:		mk-UT.vim
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://github.com/LucHermitte/vim-UT>
-" Version:	0.4.0
-let s:version = '0.4.0'
+" Version:	0.5.0
+let s:version = '0.5.0'
 " Created:	19th Feb 2009
-" Last Update:	09th Dec 2015
+" Last Update:	17th Dec 2015
 "------------------------------------------------------------------------
 cd <sfile>:p:h
 try
