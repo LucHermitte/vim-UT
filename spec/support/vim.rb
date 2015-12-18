@@ -11,6 +11,12 @@ module Support
       vim.edit!(filename)
     end
 
+    def set_buffer_contents(string)
+      string = normalize_string_indent(string)
+      string = string.split(/\r?\n/)
+      vim.command(%Q{call setline(1, #{string})})
+    end
+
     def assert_file_contents(string)
       string = normalize_string_indent(string)
       expect(IO.read(filename).strip).to eq(string)
