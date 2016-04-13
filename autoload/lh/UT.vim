@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      0.4.0
+" Version:      0.6.1
 " Created:      11th Feb 2009
-" Last Update:  09th Dec 2015
+" Last Update:  13th Apr 2016
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v0.6.1: Fix `UTRun tests/lh/*.vim`
 " 	v0.4.0: New Assert function AssertThrow
 " 	        'magic' neutral
 " 	v0.2.0: Better integration with vimrunner+rspec
@@ -607,9 +608,7 @@ function! lh#UT#check(must_keep, ...) abort
     let files = []
     for file in a:000
       let lFile = lh#path#is_absolute_path(file) ? [file] : lh#path#glob_as_list(rtp, file)
-      if len(lFile) > 0
-	call add(files, lFile[0])
-      endif
+      call extend(files, lFile)
     endfor
 
     let nok = 0

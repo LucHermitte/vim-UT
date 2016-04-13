@@ -1,5 +1,5 @@
-*UT.txt*                Unit Testing Framework for Vim (v0.4.0)
-                        For Vim version 7+.    Last change: 09th Dec 2015
+*UT.txt*                Unit Testing Framework for Vim (v0.6.1)
+                        For Vim version 7+.    Last change: 13th Apr 2016
 
                         By Luc Hermitte
                         hermitte {at} free {dot} fr
@@ -114,6 +114,14 @@ If you wish to see a clean-up function executed after each test, define the
 Finally run |:UTRun| on your test script (filename), and ... debug your failed
 assertions from the |quickfix| window.
 
+This can be done either with: >
+    :UTRun %
+
+or even with: >
+    :UTRun tests/lh/*.vim
+
+to run all tests matching `tests/lh/*.vim` in |'rtp'|+ |getcwd()|.
+
 
 ------------------------------------------------------------------------------
 UT API                                               *UT-API*          {{{1
@@ -180,6 +188,6 @@ You may also want to have a look at:
 
 }}}1
 ------------------------------------------------------------------------------
- © Luc Hermitte, 2010-2015, http://github.com/LucHermitte/vim-UT
+ © Luc Hermitte, 2010-2016, http://github.com/LucHermitte/vim-UT
  VIM: let b:VS_language = 'american'
  vim:ts=8:sw=4:tw=80:fo=tcq2:isk=!-~,^*,^\|,^\":ft=help:fdm=marker:
