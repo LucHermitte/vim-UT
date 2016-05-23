@@ -4,7 +4,7 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      0.6.2
+" Version:      1.0.0
 " Created:      11th Feb 2009
 " Last Update:  23rd May 2016
 "------------------------------------------------------------------------
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v1.0.0: UTRun no longer looks into &rtp
 " 	v0.6.1: Fix `UTRun tests/lh/*.vim`
 " 	v0.4.0: New Assert function AssertThrow
 " 	        'magic' neutral
@@ -610,23 +611,28 @@ function! lh#UT#check(must_keep, ...) abort
     call s:DefineCommands()
 
     " 3- run every test
-    let rtp = '.,'.&rtp
+    let nok = 0
+    let rtp = '.'
     let files = []
     for file in a:000
       let lFile = lh#path#is_absolute_path(file) ? [file] : lh#path#glob_as_list(rtp, file)
+      if empty(lFile)
+        let s:errors.qf += ["Cannot find file ".file." in ".getcwd()]
+        let nok = 1
+      endif
       call extend(files, lFile)
     endfor
 
-    let nok = 0
     for file in files
       let nok = (s:RunOneFile(file) > 0) || nok
     endfor
+
+    " 4- Clear the commands
+    call s:UnDefineCommands()
+
   catch /.*/
     let nok = 1
   endtry
-
-  " 4- Clear the commands
-  call s:UnDefineCommands()
 
   " 5- Return the result
   let qf = s:errors.qf

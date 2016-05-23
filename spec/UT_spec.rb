@@ -16,13 +16,16 @@ RSpec.describe "unit tests" do
   end
 
   describe "Check all tests", :unit_tests => true do
+      pwd = Dir.pwd
       files = Dir.glob('./tests/**/*.vim')
+      pp "In directory #{pwd}"
       files.each{ |file|
           it "[#{file}] runs fine" do
               # vim.command('call lh#UT#print_test_names()')
-              result = vim.echo('lh#UT#check(0, "'+file+'")')
+              abs_file = pwd + '/' + file
+              result = vim.echo('lh#UT#check(0, "'+abs_file+'")')
               # Keep only the list
-              # pp result
+              # pp "result: #{abs_file} -> #{result}"
               # Clean echoed messages
               result = result.match(/\[\d,.*\]\]/)[0]
               expect(eval(result)).to be_successful

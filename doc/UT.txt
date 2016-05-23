@@ -1,5 +1,5 @@
-*UT.txt*                Unit Testing Framework for Vim (v0.6.1)
-                        For Vim version 7+.    Last change: 13th Apr 2016
+*UT.txt*                Unit Testing Framework for Vim (v1.0.0)
+                        For Vim version 7+.    Last change: 23rd May 2016
 
                         By Luc Hermitte
                         hermitte {at} free {dot} fr
@@ -120,7 +120,7 @@ This can be done either with: >
 or even with: >
     :UTRun tests/lh/*.vim
 
-to run all tests matching `tests/lh/*.vim` in |'rtp'|+ |getcwd()|.
+to run all tests matching `tests/lh/*.vim` in |getcwd()|.
 
 
 ------------------------------------------------------------------------------
