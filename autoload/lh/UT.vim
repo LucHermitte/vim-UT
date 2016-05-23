@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      0.6.1
+" Version:      0.6.2
 " Created:      11th Feb 2009
-" Last Update:  13th Apr 2016
+" Last Update:  23rd May 2016
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -431,60 +431,66 @@ function! s:PrepareFile(file)
   let need_to_know_SNR = 0
   let suite = s:errors.new_suite(a:file)
 
-  let no = 0
-  let last_line = len(lines)
-  while no < last_line
-    if lines[no] =~ '\v^\s*:=AssertTxt>'
-      let lines[no] = substitute(lines[no], '^\v\s*\zs:=AssertTxt\s*(!=)\s*\(', 'call lh#UT#assert_txt("\1", '.(no+1).',', '')
+  let isk = &isk
+  set isk&vim
+  try
+    let no = 0
+    let last_line = len(lines)
+    while no < last_line
+      if lines[no] =~ '\v^\s*:=AssertTxt>'
+        let lines[no] = substitute(lines[no], '^\v\s*\zs:=AssertTxt\s*(!=)\s*\(', 'call lh#UT#assert_txt("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '\v^\s*:=AssertEq%[uals]>'
-      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertEq%[uals]\s*(!=)\s*\(', 'call lh#UT#assert_equals("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '\v^\s*:=AssertEq%[uals]>'
+        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertEq%[uals]\s*(!=)\s*\(', 'call lh#UT#assert_equals("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '^\v\s*:=AssertDiff%[ers]>'
-      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertDiff%[ers]\s*(!=)\s*\(', 'call lh#UT#assert_differs("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '^\v\s*:=AssertDiff%[ers]>'
+        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertDiff%[ers]\s*(!=)\s*\(', 'call lh#UT#assert_differs("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '^\v\s*:=AssertIs>'
-      let lines[no] = substitute(lines[no], '^\v\s*\zs:=AssertIs\s*(!=)\s*\(', 'call lh#UT#assert_is("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '^\v\s*:=AssertIs>'
+        let lines[no] = substitute(lines[no], '^\v\s*\zs:=AssertIs\s*(!=)\s*\(', 'call lh#UT#assert_is("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '\v^\s*:=AssertIsNot>'
-      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertIsNot\s*(!=)\s*\(', 'call lh#UT#assert_is_not("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '\v^\s*:=AssertIsNot>'
+        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertIsNot\s*(!=)\s*\(', 'call lh#UT#assert_is_not("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '\v^\s*:=AssertMatch%[es]>'
-      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertMatch%[es]\s*(!=)\s*\(', 'call lh#UT#assert_matches("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '\v^\s*:=AssertMatch%[es]>'
+        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertMatch%[es]\s*(!=)\s*\(', 'call lh#UT#assert_matches("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '\v^\s*:=AssertRel%[ation]>'
-      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertRel%[ation]\s*(!=)\s*\(', 'call lh#UT#assert_relation("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '\v^\s*:=AssertRel%[ation]>'
+        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertRel%[ation]\s*(!=)\s*\(', 'call lh#UT#assert_relation("\1", '.(no+1).',', '')
 
-    elseif lines[no] =~ '\v^\s*:=AssertTh%[rows]>'
-      " TODO: stringify param 1
-      let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertTh%[rows]\s*(!=)\s*(.*)', 'call lh#UT#assert_throws("\1", '.(no+1).', "\2")', '')
+      elseif lines[no] =~ '\v^\s*:=AssertTh%[rows]>'
+        " TODO: stringify param 1
+        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertTh%[rows]\s*(!=)\s*(.*)', 'call lh#UT#assert_throws("\1", '.(no+1).', "\2")', '')
 
-    elseif lines[no] =~ '\v^\s*:='.s:k_commands.'>'
-      let lines[no] = substitute(lines[no], '\v^\s*:='.s:k_commands.'!= \zs', (no+1).' ', '')
+      elseif lines[no] =~ '\v^\s*:='.s:k_commands.'>'
+        let lines[no] = substitute(lines[no], '\v^\s*:='.s:k_commands.'!= \zs', (no+1).' ', '')
 
-    elseif lines[no] =~ '\v^\s*:=function!=\s+s:Test'
-      let test_name = matchstr(lines[no], '\v^\s*:=function!=\s+s:\zsTest\S{-}\ze\(')
-      call suite.add_test(test_name)
-    elseif lines[no] =~ '\v^\s*:=function!=\s+s:Teardown'
-      let suite.teardown = 1
-    elseif lines[no] =~ '\v^\s*:=function!=\s+s:Setup'
-      let suite.setup = 1
+      elseif lines[no] =~ '\v^\s*:=function!=\s+s:Test'
+        let test_name = matchstr(lines[no], '\v^\s*:=function!=\s+s:\zsTest\S{-}\ze\(')
+        call suite.add_test(test_name)
+      elseif lines[no] =~ '\v^\s*:=function!=\s+s:Teardown'
+        let suite.teardown = 1
+      elseif lines[no] =~ '\v^\s*:=function!=\s+s:Setup'
+        let suite.setup = 1
+      endif
+      if lines[no] =~ '\v^\s*:=function!=\s+s:'
+        let need_to_know_SNR = 1
+      endif
+      let no += 1
+    endwhile
+
+    " Inject s:getSNR() in the script if there is a s:Function in the Test script
+    if need_to_know_SNR
+      call extend(lines, s:k_getSNR, 0)
+      let last_line += len(s:k_getSNR)
     endif
-    if lines[no] =~ '\v^\s*:=function!=\s+s:'
-      let need_to_know_SNR = 1
-    endif
-    let no += 1
-  endwhile
 
-  " Inject s:getSNR() in the script if there is a s:Function in the Test script
-  if need_to_know_SNR
-    call extend(lines, s:k_getSNR, 0)
-    let last_line += len(s:k_getSNR)
-  endif
-
-  " Inject local evualation of expressions in the script
-  " => takes care of s:variables, s:Functions(), and l:variables
-  call extend(lines, s:k_local_evaluate, 0)
+    " Inject local evualation of expressions in the script
+    " => takes care of s:variables, s:Functions(), and l:variables
+    call extend(lines, s:k_local_evaluate, 0)
+  finally
+    let &isk=isk
+  endtry
 
   silent call writefile(lines, suite.scriptname)
   " let g:lines=lines
@@ -627,6 +633,7 @@ function! lh#UT#check(must_keep, ...) abort
   return [! nok, qf]
 endfunction
 
+" }}}1
 "------------------------------------------------------------------------
 let &cpo=s:cpo_save
 "=============================================================================
