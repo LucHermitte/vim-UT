@@ -1,20 +1,19 @@
 "=============================================================================
-" $Id$
 " File:		autoload/should/be.vim                            {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://hermitte.free.fr/vim/>
-" Version:	0.0.3
+"		<URL:http://github.com/LucHermitte/vim-UT>
+" Version:	1.0.1
 " Created:	23rd Feb 2009
-" Last Update:	$Date$
+" Last Update:	24th May 2016
 "------------------------------------------------------------------------
-" Description:	
+" Description:
 " 	UT & tAssert API
-" 
+"
 "------------------------------------------------------------------------
-" Installation:	
+" Installation:
 " 	Drop this file into {rtp}/autoload/should
-" History:	
-" 	
+" History:
+"
 " TODO:		«missing features»
 " }}}1
 "=============================================================================
@@ -53,14 +52,14 @@ endfunction
 function! should#be#dict(var)
   return type(a:var) == type({})
 endfunction
-function! should#be#float(var)
-  return type(a:var) == type(0.1)
-endfunction
+if has('+float')
+  function! should#be#float(var)
+    return type(a:var) == type(0.1)
+  endfunction
+endif
 function! should#be#funcref(var)
   return type(a:var) == type(function('exists'))
 endfunction
-
-
 
 "------------------------------------------------------------------------
 let &cpo=s:cpo_save
