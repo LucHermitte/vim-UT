@@ -43,7 +43,7 @@ endfunction
 function! should#be#list(var)
   return type(a:var) == type([])
 endfunction
-function! should#be#number(var)
+function! should#be#number(var) abort
   return type(a:var) == type(42)
 endfunction
 function! should#be#string(var)
@@ -52,7 +52,7 @@ endfunction
 function! should#be#dict(var)
   return type(a:var) == type({})
 endfunction
-if has('+float')
+if has('float')
   function! should#be#float(var)
     return type(a:var) == type(0.1)
   endfunction

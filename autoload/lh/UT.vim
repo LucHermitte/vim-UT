@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      1.0.0
+" Version:      1.0.1
 " Created:      11th Feb 2009
-" Last Update:  23rd May 2016
+" Last Update:  24th May 2016
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v1.0.1: Missing aborts
 " 	v1.0.0: UTRun no longer looks into &rtp
 " 	v0.6.1: Fix `UTRun tests/lh/*.vim`
 " 	v0.4.0: New Assert function AssertThrow
@@ -129,7 +130,7 @@ let s:errors = {
       \ }
 
 " Function: s:errors.clear() dict {{{4
-function! s:errors.clear() dict
+function! s:errors.clear() dict abort
   let self.qf                    = []
   let self.nb_asserts            = 0
   let self.nb_successful_asserts = 0
@@ -155,17 +156,17 @@ function! s:errors.display() dict abort
 endfunction
 
 " Function: s:errors.set_current_SNR(SNR) {{{4
-function! s:errors.set_current_SNR(SNR)
+function! s:errors.set_current_SNR(SNR) abort
   let self.crt_suite.snr = a:SNR
 endfunction
 
 " Function: s:errors.get_current_SNR() {{{4
-function! s:errors.get_current_SNR()
+function! s:errors.get_current_SNR() abort
   return self.crt_suite.snr
 endfunction
 
 " Function: s:errors.add(FILE, LINE, message) dict {{{4
-function! s:errors.add(FILE, LINE, message) dict
+function! s:errors.add(FILE, LINE, message) dict abort
   let msg = a:FILE.':'.a:LINE.':'
   if lh#option#get('UT_print_test', 0, 'g') && has_key(s:errors, 'crt_test')
     let msg .= '['. s:errors.crt_test.name .'] '
@@ -177,12 +178,12 @@ function! s:errors.add(FILE, LINE, message) dict
 endfunction
 
 " Function: s:errors.add_test(test_name) dict {{{4
-function! s:errors.add_test(test_name) dict
+function! s:errors.add_test(test_name) dict abort
   call self.add_test(a:test_name)
 endfunction
 
 " Function: s:errors.set_test_failed() dict {{{4
-function! s:errors.set_test_failed() dict
+function! s:errors.set_test_failed() dict abort
   if has_key(self, 'crt_test')
     let self.crt_test.failed = 1
   endif
@@ -236,7 +237,7 @@ function! s:RunOneTest(file) dict abort
 endfunction
 
 " Function: s:AddTest(test_name) dict {{{4
-function! s:AddTest(test_name) dict
+function! s:AddTest(test_name) dict abort
   let test = {
         \ 'name'   : a:test_name,
         \ 'run'    : function('s:RunOneTest'),
@@ -249,7 +250,7 @@ endfunction
 " Suites wrapper functions {{{3
 
 " Function: s:ConcludeSuite() dict {{{4
-function! s:ConcludeSuite() dict
+function! s:ConcludeSuite() dict abort
   let name = self.name
   call s:errors.add(self.file, 0,  'SUITE<'. name .'> '. (s:errors.nb_success) .'/'. (s:errors.nb_tests) . ' tests successfully executed.')
   " call add(s:errors.qf, 'SUITE<'. self.name.'> '. s:rrors.nb_success .'/'. s:errors.nb_tests . ' tests successfully executed.')
@@ -257,21 +258,21 @@ function! s:ConcludeSuite() dict
 endfunction
 
 " Function: s:PlayTests(...) dict {{{4
-function! s:PlayTests(...) dict
+function! s:PlayTests(...) dict abort
   call s:Verbose('Execute tests: '.join(a:000, ', '))
   call filter(self.tests, 'index(a:000, v:val.name) >= 0')
   call s:Verbose('Keeping tests: '.join(self.tests, ', '))
 endfunction
 
 " Function: s:IgnoreTests(...) dict {{{4
-function! s:IgnoreTests(...) dict
+function! s:IgnoreTests(...) dict abort
   call s:Verbose('Ignoring tests: '.join(a:000, ', '))
   call filter(self.tests, 'index(a:000, v:val.name) < 0')
   call s:Verbose('Keeping tests: '.join(self.tests, ', '))
 endfunction
 
 " Function: s:errors.new_suite(file) dict {{{4
-function! s:errors.new_suite(file) dict
+function! s:errors.new_suite(file) dict abort
   let suite = {
         \ 'scriptname'      : s:tempfile,
         \ 'file'            : a:file,
@@ -292,7 +293,7 @@ function! s:errors.new_suite(file) dict
 endfunction
 
 " Function: s:errors.set_suite(suite_name) dict {{{4
-function! s:errors.set_suite(suite_name) dict
+function! s:errors.set_suite(suite_name) dict abort
   let a = s:Decode(a:suite_name)
   call s:Verbose('SUITE <- '. a.expr, 1)
   call s:Verbose('SUITE NAME: '. a:suite_name, 2)
@@ -305,7 +306,7 @@ endfunction
 "------------------------------------------------------------------------
 " Assert & decode {{{3
 " Function: s:Decode(expression) {{{4
-function! s:Decode(expression)
+function! s:Decode(expression) abort
   let filename = s:errors.crt_suite.file
   let expr = a:expression
   let line = matchstr(expr, '^\d\+')
@@ -317,7 +318,7 @@ function! s:Decode(expression)
 endfunction
 
 " Function: lh#UT#callback_decode(expression) {{{4
-function! lh#UT#callback_decode(expression)
+function! lh#UT#callback_decode(expression) abort
   return s:Decode(a:expression)
 endfunction
 
@@ -421,7 +422,7 @@ let s:k_getSNR   = [
       \ ]
 
 " Function: s:PrepareFile(file) {{{4
-function! s:PrepareFile(file)
+function! s:PrepareFile(file) abort
   if !filereadable(a:file)
     call s:errors.add('-', 0, a:file . " can not be read")
     return
@@ -443,6 +444,9 @@ function! s:PrepareFile(file)
 
       elseif lines[no] =~ '\v^\s*:=AssertEq%[uals]>'
         let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertEq%[uals]\s*(!=)\s*\(', 'call lh#UT#assert_equals("\1", '.(no+1).',', '')
+
+      " elseif lines[no] =~ '\v^\s*:=Assert>'
+        " let lines[no] = substitute(lines[no], '^\v\s*\zs:=Assert\s*(!=)\s*(.*)', 'call lh#UT#assert_txt("\1", '.(no+1).', \2, string(\2))', '')
 
       elseif lines[no] =~ '^\v\s*:=AssertDiff%[ers]>'
         let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertDiff%[ers]\s*(!=)\s*\(', 'call lh#UT#assert_differs("\1", '.(no+1).',', '')
@@ -533,21 +537,21 @@ endfunction
 "------------------------------------------------------------------------
 "{{{3
 " Function: s:StripResultAndDecode(expr) {{{4
-function! s:StripResultAndDecode(expr)
+function! s:StripResultAndDecode(expr) abort
   " Function needed because of an odd degenerescence of vim: commands
   " eventually loose their '\'
   return s:Decode(matchstr(a:expr, '^\d\+\s\+\zs.*'))
 endfunction
 
 " Function: s:GetResult(expr) {{{4
-function! s:GetResult(expr)
+function! s:GetResult(expr) abort
   " Function needed because of an odd degenerescence of vim: commands
   " eventually loose their '\'
   return matchstr(a:expr, '^\d\+\ze\s\+.*')
 endfunction
 
 " Function: s:DefineCommands() {{{4
-function! s:DefineCommands()
+function! s:DefineCommands() abort
   " NB: variables are already interpreted, make it a function
   " command! -nargs=1 Assert call s:Assert(<q-args>)
   command! -bang -nargs=1 UTAssert
@@ -574,7 +578,7 @@ function! s:DefineCommands()
 endfunction
 
 " Function: s:UnDefineCommands() {{{4
-function! s:UnDefineCommands()
+function! s:UnDefineCommands() abort
   silent! delcommand Assert
   silent! delcommand UTAssert
   silent! command! -nargs=* UTSuite :echoerr "Use :UTRun and not :source on this script"<bar>finish
@@ -583,7 +587,7 @@ function! s:UnDefineCommands()
 endfunction
 "------------------------------------------------------------------------
 " # callbacks {{{2
-function! lh#UT#callback_set_SNR(SNR)
+function! lh#UT#callback_set_SNR(SNR) abort
   call s:errors.set_current_SNR(a:SNR)
 endfunction
 
