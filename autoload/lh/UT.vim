@@ -6,7 +6,7 @@
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
 " Version:      1.0.1
 " Created:      11th Feb 2009
-" Last Update:  24th May 2016
+" Last Update:  25th May 2016
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -17,6 +17,7 @@
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
 " 	v1.0.1: Missing aborts
+" 	        Highlight qf results
 " 	v1.0.0: UTRun no longer looks into &rtp
 " 	v0.6.1: Fix `UTRun tests/lh/*.vim`
 " 	v0.4.0: New Assert function AssertThrow
@@ -201,6 +202,24 @@ function! lh#UT#_callstack(throwpoint) abort
   endfor
   return msg
 endfunction
+
+" Function: lh#UT#_highlight_qf() {{{3
+function! lh#UT#_highlight_qf() abort
+  if &ft == 'qf' && has('syntax')
+    syntax region UTConclusion start="SUITE" end="tests successfully executed." contains=UTCount contained
+    syntax region UTCount start="\d\+/\d\+" end="tests" contains=UTFail,UTSuccess contained
+    syntax match UTFail "\v(\d+)/\d+"
+    syntax match UTSuccess "\v(\d+)/\1"
+
+    highlight link UTSuccess Type
+    highlight link UTFail    Error
+  endif
+endfunction
+
+augroup UT_hl_qf
+  au!
+  au FileType qf call lh#UT#_highlight_qf()
+augroup END
 
 "------------------------------------------------------------------------
 " Tests wrapper function {{{3
