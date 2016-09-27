@@ -1,16 +1,15 @@
 "=============================================================================
-" $Id$
 " File:		ftplugin/vim/vim_UT.vim                              {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
-"		<URL:http://code.google.com/p/lh-vim/>
-let s:k_version = 003
-" Version:	0.0.3
+"		<URL:http://github.com/LucHermitte/vim-UT>
+let s:k_version = 101
+" Version:	1.0.1
 " Created:	20th Feb 2009
-" Last Update:	$Date$
+" Last Update:	27th Sep 2016
 "------------------------------------------------------------------------
-" Description:	Yet Another Unit Testing Framework for Vim 
+" Description:	Yet Another Unit Testing Framework for Vim
 " - Defines <F7> as :UTRun {targets=g:UTfiles}
-" 
+"
 "------------------------------------------------------------------------
 " Installation:	«install details»
 " History:	«history»
@@ -52,14 +51,15 @@ let g:loaded_ftplug_vim_UT = s:k_version
 
 function! s:UTMake()
   let files = lh#option#get('UTfiles', '%')
-  echo 'update|source '.expand('%').'|UTRun '.files
+  " echo 'update|source '.expand('%').'|UTRun '.files
+  echo 'update|UTRun '.files
   update
-  so%
+  " so%
   exe 'UTRun '.files
 endfunction
 
-
 " Functions }}}2
+" }}}1
 "------------------------------------------------------------------------
 let &cpo=s:cpo_save
 "=============================================================================
