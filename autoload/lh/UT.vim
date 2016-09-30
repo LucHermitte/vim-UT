@@ -19,6 +19,7 @@
 " 	v1.0.1: Missing aborts
 " 	        Highlight qf results
 " 	        Set the test as failed when exceptions are caught
+" 	        Always execute `Teardown()`
 " 	v1.0.0: UTRun no longer looks into &rtp
 " 	v0.6.1: Fix `UTRun tests/lh/*.vim`
 " 	v0.4.0: New Assert function AssertThrow
@@ -66,7 +67,6 @@
 "   name with the assertion failed.
 "
 " TODO:
-" - Always execute s:Teardown() -- move its call to a :finally bloc
 " - Test in UTF-8 (because of <SNR>_ injection)
 " - test under windows (where paths have spaces, etc)
 " - What about s:/SNR pollution ? The tmpfile is reused, and there is no
@@ -229,16 +229,19 @@ augroup END
 function! s:RunOneTest(file) dict abort
   try
     let s:errors.crt_test = self
-    if has_key(s:errors.crt_suite, 'setup')
-      let F = function(s:errors.get_current_SNR().'Setup')
+    try
+      if has_key(s:errors.crt_suite, 'setup')
+        let F = function(s:errors.get_current_SNR().'Setup')
+        call F()
+      endif
+      let F = function(s:errors.get_current_SNR(). self.name)
       call F()
-    endif
-    let F = function(s:errors.get_current_SNR(). self.name)
-    call F()
-    if has_key(s:errors.crt_suite, 'teardown')
-      let F = function(s:errors.get_current_SNR().'Teardown')
-      call F()
-    endif
+    finally
+      if has_key(s:errors.crt_suite, 'teardown')
+        let F = function(s:errors.get_current_SNR().'Teardown')
+        call F()
+      endif
+    endtry
   catch /Assert: abort/
     call s:errors.add(a:file,
           \ matchstr(v:exception, '.*(\zs\d\+\ze)'),
