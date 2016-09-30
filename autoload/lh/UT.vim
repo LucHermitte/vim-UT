@@ -197,9 +197,12 @@ function! lh#UT#_callstack(throwpoint) abort
   " Ignore functions from this script
   let callstack = filter(lh#exception#callstack(a:throwpoint), 'v:val.script !~ ".*autoload.lh.UT.vim"')
   for func in callstack
+    if s:tempfile == func.script
+      let func.script = substitute(func.script, escape(s:tempfile, '.\'), s:errors.crt_suite.file, 'g')
+      let func.pos    = func.pos - s:errors.offset
+    endif
     " call s:errors.add(func.script, func.pos, '  called from '.(func.fname).'['.(func.offset).']')
-    let script = substitute(func.script, escape(s:tempfile, '.\'), s:errors.crt_suite.file, 'g')
-    let msg .= "\n".(script).':'.(func.pos - s:errors.offset).': called from '.(func.fname).'['.(func.offset).']'
+    let msg .= "\n".(func.script).':'.(func.pos).': called from '.(func.fname).'['.(func.offset).']'
   endfor
   return msg
 endfunction
