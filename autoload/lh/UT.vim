@@ -20,6 +20,8 @@
 " 	        Highlight qf results
 " 	        Set the test as failed when exceptions are caught
 " 	        Always execute `Teardown()`
+"               Take into account the offset introduced by lines injected at
+"               the top of the file
 " 	v1.0.0: UTRun no longer looks into &rtp
 " 	v0.6.1: Fix `UTRun tests/lh/*.vim`
 " 	v0.4.0: New Assert function AssertThrow
@@ -72,8 +74,6 @@
 " - What about s:/SNR pollution ? The tmpfile is reused, and there is no
 "   guaranty a script will clean its own place
 " - add &efm for viml errors like the one produced by :Assert 0 + [0]
-"   and take into account the offset introduced by lines injected at the top of
-"   the file
 " - simplify s:errors functions
 " - merge with Tom Link tAssert plugin? (the UI is quite different)
 " - Support Embedded comments like for instance:
@@ -199,7 +199,7 @@ function! lh#UT#_callstack(throwpoint) abort
   for func in callstack
     " call s:errors.add(func.script, func.pos, '  called from '.(func.fname).'['.(func.offset).']')
     let script = substitute(func.script, escape(s:tempfile, '.\'), s:errors.crt_suite.file, 'g')
-    let msg .= "\n".(script).':'.(func.pos).': called from '.(func.fname).'['.(func.offset).']'
+    let msg .= "\n".(script).':'.(func.pos - s:errors.offset).': called from '.(func.fname).'['.(func.offset).']'
   endfor
   return msg
 endfunction
@@ -306,7 +306,8 @@ function! s:errors.new_suite(file) dict abort
         \ 'conclude'        : function('s:ConcludeSuite'),
         \ 'play'            : function('s:PlayTests'),
         \ 'ignore'          : function('s:IgnoreTests'),
-        \ 'nb_tests_failed' : 0
+        \ 'nb_tests_failed' : 0,
+        \ 'offset'          : 0
         \ }
   " Default name, in case UTSuite is not called
   let suite.name = fnamemodify(suite.file, ':t:r')
@@ -509,14 +510,16 @@ function! s:PrepareFile(file) abort
     endwhile
 
     " Inject s:getSNR() in the script if there is a s:Function in the Test script
+    let s:errors.offset = 0
     if need_to_know_SNR
       call extend(lines, s:k_getSNR, 0)
-      let last_line += len(s:k_getSNR)
+      let s:errors.offset += len(s:k_getSNR)
     endif
 
     " Inject local evualation of expressions in the script
     " => takes care of s:variables, s:Functions(), and l:variables
     call extend(lines, s:k_local_evaluate, 0)
+    let s:errors.offset += len(s:k_local_evaluate)
   finally
     let &isk=isk
   endtry
