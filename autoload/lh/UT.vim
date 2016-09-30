@@ -4,7 +4,7 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      1.0.1
+" Version:      1.0.2
 " Created:      11th Feb 2009
 " Last Update:  30th Sep 2016
 "------------------------------------------------------------------------
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v1.0.2: Extract s:Setup() call from try..finally block
 " 	v1.0.1: Missing aborts
 " 	        Highlight qf results
 " 	        Set the test as failed when exceptions are caught
@@ -232,11 +233,11 @@ augroup END
 function! s:RunOneTest(file) dict abort
   try
     let s:errors.crt_test = self
+    if has_key(s:errors.crt_suite, 'setup')
+      let F = function(s:errors.get_current_SNR().'Setup')
+      call F()
+    endif
     try
-      if has_key(s:errors.crt_suite, 'setup')
-        let F = function(s:errors.get_current_SNR().'Setup')
-        call F()
-      endif
       let F = function(s:errors.get_current_SNR(). self.name)
       call F()
     finally
