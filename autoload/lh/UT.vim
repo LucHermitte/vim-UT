@@ -6,7 +6,7 @@
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
 " Version:      1.0.1
 " Created:      11th Feb 2009
-" Last Update:  25th May 2016
+" Last Update:  30th Sep 2016
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -18,6 +18,7 @@
 " 	compatible with this framework.
 " 	v1.0.1: Missing aborts
 " 	        Highlight qf results
+" 	        Set the test as failed when exceptions are caught
 " 	v1.0.0: UTRun no longer looks into &rtp
 " 	v0.6.1: Fix `UTRun tests/lh/*.vim`
 " 	v0.4.0: New Assert function AssertThrow
@@ -247,6 +248,7 @@ function! s:RunOneTest(file) dict abort
     let msg = throwpoint . ': '.v:exception
     let msg .= lh#UT#_callstack(v:throwpoint)
     call s:errors.add(a:file, 0, msg)
+    call s:errors.set_test_failed()
   finally
     unlet s:errors.crt_test
     if s:print_test_names
