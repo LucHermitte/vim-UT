@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      1.0.2
+" Version:      1.0.3
 " Created:      11th Feb 2009
-" Last Update:  30th Sep 2016
+" Last Update:  17th Oct 2016
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v1.0.3: Support "debug" before `AssertEq` & co
 " 	v1.0.2: Extract s:Setup() call from try..finally block
 " 	v1.0.1: Missing aborts
 " 	        Highlight qf results
@@ -468,33 +469,33 @@ function! s:PrepareFile(file) abort
     let no = 0
     let last_line = len(lines)
     while no < last_line
-      if lines[no] =~ '\v^\s*:=AssertTxt>'
-        let lines[no] = substitute(lines[no], '^\v\s*\zs:=AssertTxt\s*(!=)\s*\(', 'call lh#UT#assert_txt("\1", '.(no+1).',', '')
+      if lines[no] =~ '\v^\s*:=%(debug\s+)=AssertTxt>'
+        let lines[no] = substitute(lines[no], '^\v\s*:=%(debug\s+)=\zsAssertTxt\s*(!=)\s*\(', 'call lh#UT#assert_txt("\1", '.(no+1).',', '')
 
-      elseif lines[no] =~ '\v^\s*:=AssertEq%[uals]>'
-        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertEq%[uals]\s*(!=)\s*\(', 'call lh#UT#assert_equals("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertEq%[uals]>'
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertEq%[uals]\s*(!=)\s*\(', 'call lh#UT#assert_equals("\1", '.(no+1).',', '')
 
-      " elseif lines[no] =~ '\v^\s*:=Assert>'
-        " let lines[no] = substitute(lines[no], '^\v\s*\zs:=Assert\s*(!=)\s*(.*)', 'call lh#UT#assert_txt("\1", '.(no+1).', \2, string(\2))', '')
+      " elseif lines[no] =~ '\v^\s*:=%(debug\s+)=Assert>'
+        " let lines[no] = substitute(lines[no], '^\v\s*:=%(debug\s+)=\zsAssert\s*(!=)\s*(.*)', 'call lh#UT#assert_txt("\1", '.(no+1).', \2, string(\2))', '')
 
-      elseif lines[no] =~ '^\v\s*:=AssertDiff%[ers]>'
-        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertDiff%[ers]\s*(!=)\s*\(', 'call lh#UT#assert_differs("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '^\v\s*:=%(debug\s+)=AssertDiff%[ers]>'
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertDiff%[ers]\s*(!=)\s*\(', 'call lh#UT#assert_differs("\1", '.(no+1).',', '')
 
-      elseif lines[no] =~ '^\v\s*:=AssertIs>'
-        let lines[no] = substitute(lines[no], '^\v\s*\zs:=AssertIs\s*(!=)\s*\(', 'call lh#UT#assert_is("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '^\v\s*:=%(debug\s+)=AssertIs>'
+        let lines[no] = substitute(lines[no], '^\v\s*:=%(debug\s+)=\zsAssertIs\s*(!=)\s*\(', 'call lh#UT#assert_is("\1", '.(no+1).',', '')
 
-      elseif lines[no] =~ '\v^\s*:=AssertIsNot>'
-        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertIsNot\s*(!=)\s*\(', 'call lh#UT#assert_is_not("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertIsNot>'
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertIsNot\s*(!=)\s*\(', 'call lh#UT#assert_is_not("\1", '.(no+1).',', '')
 
-      elseif lines[no] =~ '\v^\s*:=AssertMatch%[es]>'
-        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertMatch%[es]\s*(!=)\s*\(', 'call lh#UT#assert_matches("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertMatch%[es]>'
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertMatch%[es]\s*(!=)\s*\(', 'call lh#UT#assert_matches("\1", '.(no+1).',', '')
 
-      elseif lines[no] =~ '\v^\s*:=AssertRel%[ation]>'
-        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertRel%[ation]\s*(!=)\s*\(', 'call lh#UT#assert_relation("\1", '.(no+1).',', '')
+      elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertRel%[ation]>'
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertRel%[ation]\s*(!=)\s*\(', 'call lh#UT#assert_relation("\1", '.(no+1).',', '')
 
-      elseif lines[no] =~ '\v^\s*:=AssertTh%[rows]>'
+      elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertTh%[rows]>'
         " TODO: stringify param 1
-        let lines[no] = substitute(lines[no], '\v^\s*\zs:=AssertTh%[rows]\s*(!=)\s*(.*)', 'call lh#UT#assert_throws("\1", '.(no+1).', "\2")', '')
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertTh%[rows]\s*(!=)\s*(.*)', 'call lh#UT#assert_throws("\1", '.(no+1).', "\2")', '')
 
       elseif lines[no] =~ '\v^\s*:='.s:k_commands.'>'
         let lines[no] = substitute(lines[no], '\v^\s*:='.s:k_commands.'!= \zs', (no+1).' ', '')
