@@ -30,7 +30,9 @@ RSpec.describe "unit tests" do
               # Keep only the list
               # pp "result: #{abs_file} -> #{result}"
               # Clean echoed messages
-              result = eval(result.match(/\[\d,.*\]\]/)[0])
+              if not result.nil?
+                  result = eval(result.match(/\[\d,.*\]\]/)[0])
+              end
               # pp "result0: #{result[0]}"
               if result.nil? or result.empty? or (result[0] == 0)
                   # need to wait for the log file to be dumped...?
