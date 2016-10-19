@@ -22,13 +22,24 @@ RSpec.describe "unit tests" do
       files.each{ |file|
           it "[#{file}] runs fine" do
               # vim.command('call lh#UT#print_test_names()')
+              vim.command('call lh#askvim#_beware_running_through_client_server()')
               abs_file = pwd + '/' + file
+              vim.command('call lh#log#set_logger("file", "'+abs_file+'.log")')
+              vim.command('call lh#log#this("Logging UT '+file+'")')
               result = vim.echo('lh#UT#check(0, "'+abs_file+'")')
               # Keep only the list
               # pp "result: #{abs_file} -> #{result}"
               # Clean echoed messages
-              result = result.match(/\[\d,.*\]\]/)[0]
-              expect(eval(result)).to be_successful
+              result = eval(result.match(/\[\d,.*\]\]/)[0])
+              # pp "result0: #{result[0]}"
+              if result.empty? or (result[0] == 0)
+                  # need to wait for the log file to be dumped...?
+                  # sleep 5
+                  pp "Log: #{file}.log"
+                  log = File.read(abs_file + '.log')
+                  print "#{log}\n"
+              end
+              expect(result).to be_successful
           end
       }
   end
