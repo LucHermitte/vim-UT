@@ -32,7 +32,7 @@ RSpec.describe "unit tests" do
               # Clean echoed messages
               result = eval(result.match(/\[\d,.*\]\]/)[0])
               # pp "result0: #{result[0]}"
-              if result.empty? or (result[0] == 0)
+              if result.nil? or result.empty? or (result[0] == 0)
                   # need to wait for the log file to be dumped...?
                   # sleep 5
                   pp "Log: #{file}.log"
