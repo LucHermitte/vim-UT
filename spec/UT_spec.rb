@@ -28,15 +28,13 @@ RSpec.describe "unit tests" do
               vim.command('call lh#log#this("Logging UT '+file+'")')
               result = vim.echo('lh#UT#check(0, "'+abs_file+'")')
               # Keep only the list
-              # pp "result: #{abs_file} -> #{result}"
+              pp "result: #{abs_file} -> #{result}"
               # Clean echoed messages
               if not result.nil?
                   result = eval(result.match(/\[\d,.*\]\]/)[0])
               end
               # pp "result0: #{result[0]}"
               if result.nil? or result.empty? or (result[0] == 0)
-                  # need to wait for the log file to be dumped...?
-                  # sleep 5
                   pp "Log: #{file}.log"
                   log = File.read(abs_file + '.log')
                   print "#{log}\n"
