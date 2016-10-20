@@ -30,7 +30,7 @@ RSpec.describe "unit tests" do
               # Keep only the list
               pp "result: #{abs_file} -> #{result}"
               # Clean echoed messages
-              if not result.nil?
+              if not (result.nil? or result.empty?)
                   result = eval(result.match(/\[\d,.*\]\]/)[0])
               end
               # pp "result0: #{result[0]}"
