@@ -24,18 +24,17 @@ RSpec.describe "unit tests" do
               # vim.command('call lh#UT#print_test_names()')
               vim.command('call lh#askvim#_beware_running_through_client_server()')
               abs_file = pwd + '/' + file
-              log_file = abs_file + '.log'
-              vim.command('call writefile(["test"], "'+log_file+'")')
-              # log_file = '/tmp/'+ file + '.log'
+              # log_file = abs_file + '.log'
+              log_file = '/tmp/'+ file + '.log'
+              # vim.command('call writefile(["test"], "'+log_file+'")')
               vim.command('call lh#log#set_logger("file", "'+log_file+'")')
               vim.command('call lh#log#this("Logging UT '+file+'")')
               expect(File.file?(log_file)).to be true
-              expect(vim.echo('lh#log#version()')).to match(/4000rc1/)
               result = vim.echo('lh#UT#check(0, "'+abs_file+'")')
-              # Keep only the list
               # pp "result: #{abs_file} -> #{result}"
-              # Clean echoed messages
+              # Keep only the list =>
               if not (result.nil? or result.empty?)
+                  # Clean echoed messages
                   result = eval(result.match(/\[\d,.*\]\]/)[0])
               end
               # pp "result0: #{result[0]}"
