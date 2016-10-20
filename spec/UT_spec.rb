@@ -26,9 +26,10 @@ RSpec.describe "unit tests" do
               abs_file = pwd + '/' + file
               log_file = abs_file + '.log'
               # log_file = '/tmp/'+ file + '.log'
-              # vim.command('call writefile(["test"], "'+log_file+'")')
+              vim.command('call writefile(["test"], "'+log_file+'")')
               vim.command('call lh#log#set_logger("file", "'+log_file+'")')
               vim.command('call lh#log#this("Logging UT '+file+'")')
+              print "Check log file '#{log_file}' exists\n"
               expect(File.file?(log_file)).to be true
               result = vim.echo('lh#UT#check(0, "'+abs_file+'")')
               # pp "result: #{abs_file} -> #{result}"
