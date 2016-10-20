@@ -30,7 +30,7 @@ RSpec.describe "unit tests" do
               vim.command('call lh#log#set_logger("file", "'+log_file+'")')
               vim.command('call lh#log#this("Logging UT '+file+'")')
               expect(File.file?(log_file)).to be true
-              expect(vim.echo('lh#log#version')).to match(/4000rc1/)
+              expect(vim.echo('lh#log#version()')).to match(/4000rc1/)
               result = vim.echo('lh#UT#check(0, "'+abs_file+'")')
               # Keep only the list
               # pp "result: #{abs_file} -> #{result}"
