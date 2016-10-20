@@ -24,8 +24,8 @@ RSpec.describe "unit tests" do
               # vim.command('call lh#UT#print_test_names()')
               vim.command('call lh#askvim#_beware_running_through_client_server()')
               abs_file = pwd + '/' + file
-              # log_file = abs_file + '.log'
-              log_file = '/tmp/'+ file + '.log'
+              log_file = abs_file + '.log'
+              # log_file = '/tmp/'+ file + '.log'
               # vim.command('call writefile(["test"], "'+log_file+'")')
               vim.command('call lh#log#set_logger("file", "'+log_file+'")')
               vim.command('call lh#log#this("Logging UT '+file+'")')
