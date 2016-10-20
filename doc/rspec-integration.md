@@ -17,6 +17,9 @@ flavor 'LucHermitte/vim-UT', '>= 0.3.0'
 Note: you don't want to have your plugin to always depend on vim-flavor. Only
 your tests will need it.
 
+__Beware, VimFlavor won't clone from `master` but from the last known tag. I've
+lost days trying to figure out why tests were failing because of that.__
+
 In your Rakefile, you'll have to add
 
 ```Rakefile
