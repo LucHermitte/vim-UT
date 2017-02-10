@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      1.0.3
+" Version:      1.0.4
 " Created:      11th Feb 2009
-" Last Update:  17th Oct 2016
+" Last Update:  10th Feb 2017
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v1.0.4: Throw exceptions on lh-vim-lib assertion failures in AssertThrow
 " 	v1.0.3: Support "debug" before `AssertEq` & co
 " 	v1.0.2: Extract s:Setup() call from try..finally block
 " 	v1.0.1: Missing aborts
@@ -408,11 +409,15 @@ endfunction
 " Function: lh#UT#assert_throws(bang, line, lhs) {{{4
 function! lh#UT#assert_throws(bang, line, lhs) abort
   try
+    let dbc_mode = lh#assert#mode()
+    call lh#assert#mode('stop')
     call eval(a:lhs)
     return lh#UT#assert_txt(a:bang, a:line, 0,
         \ a:lhs . ' does not throw')
   catch /.*/
     " nominal case...
+  finally
+    call lh#assert#mode(dbc_mode)
   endtry
 endfunction
 
