@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      1.0.4
+" Version:      1.0.5
 " Created:      11th Feb 2009
-" Last Update:  10th Feb 2017
+" Last Update:  01st Mar 2017
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v1.0.5: Short-circuit `Toggle PluginAssertmode`
 " 	v1.0.4: Throw exceptions on lh-vim-lib assertion failures in AssertThrow
 " 	v1.0.3: Support "debug" before `AssertEq` & co
 " 	v1.0.2: Extract s:Setup() call from try..finally block
@@ -409,15 +410,18 @@ endfunction
 " Function: lh#UT#assert_throws(bang, line, lhs) {{{4
 function! lh#UT#assert_throws(bang, line, lhs) abort
   try
-    let dbc_mode = lh#assert#mode()
-    call lh#assert#mode('stop')
+    " We should normally rely on lh#assert#mode(), but as it uses
+    " `Toggle PluginAssertmode`, let's take a shortcut.
+    let cleanup = lh#on#exit()
+          \.restore('g:lh#assert#_mode')
+    let g:lh#assert#_mode = 'stop'
     call eval(a:lhs)
     return lh#UT#assert_txt(a:bang, a:line, 0,
         \ a:lhs . ' does not throw')
   catch /.*/
     " nominal case...
   finally
-    call lh#assert#mode(dbc_mode)
+    call cleanup.finalize()
   endtry
 endfunction
 
@@ -640,7 +644,7 @@ function! lh#UT#run(bang,...) abort
   call s:errors.display()
 endfunction
 
-" Function: lh#UT#check([testnames...]) {{{3
+" Function: lh#UT#check([testnames...]) {{{2
 " @throw None
 function! lh#UT#check(must_keep, ...) abort
   try
