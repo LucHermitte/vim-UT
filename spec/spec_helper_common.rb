@@ -8,6 +8,15 @@ require 'rspec/expectations'
 
 # SimpleCov.start
 
+module Vimrunner
+  class Client
+    def runtime(script)
+        script_path = Path.new(script)
+        command("runtime #{script_path}")
+    end
+  end
+end
+
 Vimrunner::RSpec.configure do |config|
   config.reuse_server = true
   vim_extra_plugins = []
