@@ -2,24 +2,24 @@
 " File:         spec/input-mock.vim                               {{{1
 " Author:       Luc Hermitte <EMAIL:luc {dot} hermitte {at} gmail {dot} com>
 "		<URL:http://github.com/LucHermitte/mu-template>
-" Version:      0.6.0
-let s:k_version = '060'
+" Version:      1.0.6.
+let s:k_version = '106'
 " Created:      17th Dec 2015
-" Last Update:  18th Dec 2015
+" Last Update:  13th Mar 2017
 "------------------------------------------------------------------------
 " Description:
-" Mock INPUT and CONFIRM functions for vimrunner tests
+" Mock lh#ui#input and lh#ui#confirm functions for vimrunner tests
 " }}}1
 "=============================================================================
 
 let s:cpo_save=&cpo
 set cpo&vim
 
-function! INPUT(...)
+function! lh#ui#input(...)
   return exists('g:mocked_input') ? g:mocked_input : a:2
 endfunction
 
-function! CONFIRM(...)
+function! lh#ui#confirm(...)
   return g:mocked_confirm
 endfunction
 

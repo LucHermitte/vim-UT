@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      1.0.5
+" Version:      1.0.6
 " Created:      11th Feb 2009
-" Last Update:  01st Mar 2017
+" Last Update:  13th Mar 2017
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
