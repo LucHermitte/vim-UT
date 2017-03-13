@@ -1,4 +1,4 @@
-# vim-UT [![Project Stats](https://www.openhub.net/p/21020/widgets/project_thin_badge.gif)](https://www.openhub.net/p/21020)
+# vim-UT [![Version](https://img.shields.io/badge/version-1.0.6-blue.svg)](https://github.com/LucHermitte/vim-UT/releases/tag/1.0.6) [![Project Stats](https://www.openhub.net/p/21020/widgets/project_thin_badge.gif)](https://www.openhub.net/p/21020)
 
 ## Introduction
 
@@ -91,13 +91,13 @@ Assert 1 == 1 " 1 must value 1
 
 
 ## Design Choices
-  * The assertions supported by this plugin are expected to be made in a Unit Testing file, they are not to be used in regular VimL scripts as a _Design by Contract_ tool. Check Thomas Link's plugin, it is much more suited for that kind of assertions.
+  * The assertions supported by this plugin are expected to be made in a Unit Testing file, they are not to be used in regular VimL scripts as a _Design by Contract_ tool. Check my [DbC framework](http://github.com/LucHermitte/lh-vim-lib/tree/master/doc/DbC.md) in lh-vim-lib, or even Thomas Link's plugin, it is much more suited for that kind of assertions.
 
   * In order to be able to produce the quickfix entries, the plugin first parses the Unit Test file to complete all `:Assert` occurrences with extra information about the line number where the assertion is made.
 
 
 ## Installation
-  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib)
+  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v4.0.0
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install vim-UT (this is the preferred method because of the dependencies)
 ```vim
 ActivateAddons UT
