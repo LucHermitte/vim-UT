@@ -4,7 +4,7 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      1.0.6
+" Version:      1.0.8
 " Created:      11th Feb 2009
 " Last Update:  09th Apr 2017
 "------------------------------------------------------------------------
@@ -16,7 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
-" 	v1.0.7: Accept space before function brackets
+" 	v1.0.8: Accept space before function brackets
 " 	v1.0.5: Short-circuit `Toggle PluginAssertmode`
 " 	v1.0.4: Throw exceptions on lh-vim-lib assertion failures in AssertThrow
 " 	v1.0.3: Support "debug" before `AssertEq` & co
