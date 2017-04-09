@@ -6,7 +6,7 @@
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
 " Version:      1.0.6
 " Created:      11th Feb 2009
-" Last Update:  13th Mar 2017
+" Last Update:  09th Apr 2017
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v1.0.6: Accept space before function brackets
 " 	v1.0.5: Short-circuit `Toggle PluginAssertmode`
 " 	v1.0.4: Throw exceptions on lh-vim-lib assertion failures in AssertThrow
 " 	v1.0.3: Support "debug" before `AssertEq` & co
@@ -510,7 +511,7 @@ function! s:PrepareFile(file) abort
         let lines[no] = substitute(lines[no], '\v^\s*:='.s:k_commands.'!= \zs', (no+1).' ', '')
 
       elseif lines[no] =~ '\v^\s*:=function!=\s+s:Test'
-        let test_name = matchstr(lines[no], '\v^\s*:=function!=\s+s:\zsTest\S{-}\ze\(')
+        let test_name = matchstr(lines[no], '\v^\s*:=function!=\s+s:\zsTest\S{-}\ze\s*\(')
         call suite.add_test(test_name)
       elseif lines[no] =~ '\v^\s*:=function!=\s+s:Teardown'
         let suite.teardown = 1
