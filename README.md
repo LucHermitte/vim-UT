@@ -1,4 +1,4 @@
-# vim-UT [![Version](https://img.shields.io/badge/version-1.0.6-blue.svg)](https://github.com/LucHermitte/vim-UT/releases/tag/1.0.6) [![Project Stats](https://www.openhub.net/p/21020/widgets/project_thin_badge.gif)](https://www.openhub.net/p/21020)
+# vim-UT [![Last release](https://img.shields.io/github/tag/LucHermitte/vim-UT.svg)](https://github.com/LucHermitte/vim-UT/releases) [![Project Stats](https://www.openhub.net/p/21020/widgets/project_thin_badge.gif)](https://www.openhub.net/p/21020)
 
 ## Introduction
 
