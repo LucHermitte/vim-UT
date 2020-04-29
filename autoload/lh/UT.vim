@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      1.0.8
+" Version:      1.1.0
 " Created:      11th Feb 2009
-" Last Update:  09th Apr 2017
+" Last Update:  29th Apr 2020
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v1.1.0: Set qf title
 " 	v1.0.8: Accept space before function brackets
 " 	v1.0.5: Short-circuit `Toggle PluginAssertmode`
 " 	v1.0.4: Throw exceptions on lh-vim-lib assertion failures in AssertThrow
@@ -150,7 +151,8 @@ endfunction
 " Function: s:errors.display() dict {{{4
 function! s:errors.display() dict abort
   " let g:errors = self.qf
-  silent! cexpr self.qf
+  call setqflist(self.qf)
+  call lh#qf#set_title(join(lh#list#get(self.suites, 'name'), ', '))
 
   " Open the quickfix window
   if exists(':Copen')
@@ -174,14 +176,23 @@ endfunction
 
 " Function: s:errors.add(FILE, LINE, message) dict {{{4
 function! s:errors.add(FILE, LINE, message) dict abort
-  let msg = a:FILE.':'.a:LINE.':'
+  let msg = ''
   if lh#option#get('UT_print_test', 0, 'g') && has_key(s:errors, 'crt_test')
     let msg .= '['. s:errors.crt_test.name .'] '
   endif
   let message = split(a:message, "\n")
   let msg.= message[0]
-  call add(self.qf, msg)
+  let qfe = {
+        \ 'filename': a:FILE,
+        \ 'lnum'    : a:LINE,
+        \ 'text'    : msg,
+        \ 'type'    : 'E'
+        \}
+  call add(self.qf, qfe)
   let self.qf += message[1:]
+  let messages = map(message[1:], 'split(v:val, ":")')
+  let qfs      = map(messages, "{'filename': v:val[0], 'lnum': v:val[1], 'text': join(v:val[2:], ':')}")
+  call extend(self.qf, qfs)
 endfunction
 
 " Function: s:errors.add_test(test_name) dict {{{4
@@ -207,7 +218,7 @@ function! lh#UT#_callstack(throwpoint) abort
       let func.pos    = func.pos - s:errors.offset
     endif
     " call s:errors.add(func.script, func.pos, '  called from '.(func.fname).'['.(func.offset).']')
-    let msg .= "\n".(func.script).':'.(func.pos).': called from '.(func.fname).'['.(func.offset).']'
+    let msg .= "\n".(func.script).':'.(func.pos).':called from '.(func.fname).'['.(func.offset).']'
   endfor
   return msg
 endfunction

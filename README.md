@@ -97,7 +97,7 @@ Assert 1 == 1 " 1 must value 1
 
 
 ## Installation
-  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v4.0.0
+  * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v5.1.0
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install vim-UT (this is the preferred method because of the dependencies)
 ```vim
 ActivateAddons UT
