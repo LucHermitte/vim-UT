@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      1.1.0
+" Version:      2.0.0
 " Created:      11th Feb 2009
-" Last Update:  29th Apr 2020
+" Last Update:  07th May 2020
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,7 +16,8 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
-" 	v1.1.0: Set qf title
+" 	v2.0.0: Set qf title
+" 	        Simplify lh#UT#assert_txt()
 " 	v1.0.8: Accept space before function brackets
 " 	v1.0.5: Short-circuit `Toggle PluginAssertmode`
 " 	v1.0.4: Throw exceptions on lh-vim-lib assertion failures in AssertThrow
@@ -190,7 +191,7 @@ function! s:errors.add(FILE, LINE, message) dict abort
         \}
   call add(self.qf, qfe)
   let self.qf += message[1:]
-  let messages = map(message[1:], 'split(v:val, ":")')
+  let messages = map(message[1:], 'split(v:val, ":", 1)')
   let qfs      = map(messages, "{'filename': v:val[0], 'lnum': v:val[1], 'text': join(v:val[2:], ':')}")
   call extend(self.qf, qfs)
 endfunction
@@ -367,18 +368,17 @@ function! lh#UT#callback_decode(expression) abort
 endfunction
 
 " Function: lh#UT#assert_txt(bang, line, expr, msg) abort {{{4
-function! lh#UT#assert_txt(bang, line, expr, msg) abort
-  let filename = s:errors.crt_suite.file
-  let s:a = { 'file':filename, 'line':a:line, 'expr':a:expr, 'msg':a:msg}
-  try
-    let s:ok = !empty(eval(s:a.expr))
-    exe "UTAssert".a:bang." ".s:ok." ".a:line." ".a:msg
-  catch /.*/
-    let s:ok = 0
-    let msg = (a:msg." -- exception thrown: ".v:exception." at: ".v:throwpoint)
-    let msg .= lh#UT#_callstack(v:throwpoint)
-    exe "UTAssert".a:bang." ".s:ok." ".a:line." ".msg
-  endtry
+function! lh#UT#assert_txt(bang, line, ok, msg) abort
+  let s:errors.nb_asserts += 1
+  if !a:ok
+    call s:errors.set_test_failed()
+    call s:errors.add(s:errors.crt_suite.file, a:line, 'assertion failed: '.a:msg)
+    if a:bang == '!'
+      throw "Assert: abort (".a:line.")"
+    endif
+  else
+    let s:errors.nb_successful_asserts += 1
+  endif
 endfunction
 
 " Function: lh#UT#assert_equals(bang, line, lhs, rhs) {{{4
