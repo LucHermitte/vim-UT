@@ -18,6 +18,7 @@
 " 	compatible with this framework.
 " 	v2.0.0: Set qf title
 " 	        Simplify lh#UT#assert_txt()
+" 	        Improve context on errors
 " 	v1.0.8: Accept space before function brackets
 " 	v1.0.5: Short-circuit `Toggle PluginAssertmode`
 " 	v1.0.4: Throw exceptions on lh-vim-lib assertion failures in AssertThrow
@@ -210,6 +211,12 @@ endfunction
 
 " Function: lh#UT#_callstack(throwpoint) {{{3
 function! lh#UT#_callstack(throwpoint) abort
+  let [msg, ln] = lh#UT#_callstack_with_linenr(a:throwpoint)
+  return msg
+endfunction
+
+" Function: lh#UT#_callstack_with_linenr(throwpoint) {{{3
+function! lh#UT#_callstack_with_linenr(throwpoint) abort
   let msg = ''
   " Ignore functions from this script
   let callstack = filter(lh#exception#callstack(a:throwpoint), 'v:val.script !~ ".*autoload.lh.UT.vim"')
@@ -221,7 +228,8 @@ function! lh#UT#_callstack(throwpoint) abort
     " call s:errors.add(func.script, func.pos, '  called from '.(func.fname).'['.(func.offset).']')
     let msg .= "\n".(func.script).':'.(func.pos).':called from '.(func.fname).'['.(func.offset).']'
   endfor
-  return msg
+  " TODO: check whether it's last or first entry in callstack
+  return [msg, exists('func') ? func.pos : 0]
 endfunction
 
 " Function: lh#UT#_highlight_qf() {{{3
@@ -268,9 +276,10 @@ function! s:RunOneTest(file) dict abort
           \ 'Test <'. self.name .'> execution aborted on critical assertion failure')
   catch /.*/
     let throwpoint = substitute(v:throwpoint, escape(s:tempfile, '.\'), a:file, 'g')
-    let msg = throwpoint . ': '.v:exception
-    let msg .= lh#UT#_callstack(v:throwpoint)
-    call s:errors.add(a:file, 0, msg)
+    let msg = v:exception . ' @ ' . throwpoint
+    let [msg_ctx, linenr] = lh#UT#_callstack_with_linenr(v:throwpoint)
+    let msg .= msg_ctx
+    call s:errors.add(a:file, linenr, msg)
     call s:errors.set_test_failed()
   finally
     unlet s:errors.crt_test
@@ -451,7 +460,7 @@ let s:k_local_evaluate = [
       \ '    let msg  = " -- exception thrown: ".v:exception." at: ".v:throwpoint                                     |'.
       \ '    let msg .= lh#UT#_callstack(v:throwpoint)                                                                |'.
       \ '    exe "UTAssert<bang> ".s:ok." ".(<f-args>.msg)                                                            |'.
-      \ 'endtry                                                                                                       |'
+      \ 'endtry'
       \]
       " \ '    let callstack = lh#exception#callstack(v:throwpoint)                                                |'.
       " \ '        call s:errors.add(func.script, func.pos, "  called from ".(func.fname)."[".(func.offset)."]")   |'.
@@ -580,8 +589,9 @@ function! s:RunOneFile(file) abort
   catch /.*/
     let throwpoint = substitute(v:throwpoint, escape(s:tempfile, '.\'), a:file, 'g')
     let msg = ': '.v:exception.' @ ' . throwpoint
-    let msg .= lh#UT#_callstack(v:throwpoint)
-    call s:errors.add(a:file, 0, msg)
+    let [msg_ctx, linenr] = lh#UT#_callstack_with_linenr(v:throwpoint)
+    let msg .= msg_ctx
+    call s:errors.add(a:file, line_nr, msg)
   finally
     return s:errors.crt_suite.conclude()
     " Never! the name must not be used by other Vim sessions
