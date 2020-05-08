@@ -6,7 +6,7 @@
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
 " Version:      2.0.0
 " Created:      11th Feb 2009
-" Last Update:  07th May 2020
+" Last Update:  08th May 2020
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -551,7 +551,9 @@ function! s:PrepareFile(file) abort
   endtry
 
   silent call writefile(lines, suite.scriptname)
-  " let g:lines=lines
+  if lh#UT#verbose()
+    let g:lh#UT#debug_lines=lines
+  endif
 endfunction
 
 " Function: s:RunOneFile(file) {{{4
