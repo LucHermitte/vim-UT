@@ -21,10 +21,11 @@ _UT_ is another Unit Testing Framework for Vim, which main particularity is to f
 
 #### Other features
   * Lightweight and simple to use: there is only one command defined, all the other definitions are kept in an autoload plugin.
-  * Fixtures: optional `s:Setup()`, `s:Teardown()` executed before each test
+  * Fixtures: optional `s:Setup()`, `s:Teardown()` executed before and after each test
   * Supports banged `:Assert!` to stop processing a given test on failed assertions
   * `s:LocalFunctions()`, `s:variables`, and `l:variables` are supported
-  * Takes advantage of [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)'s `:COpen` command if installed
+  * Buffer content can be set -- with `:SetBufferContent`
+  * Buffer content can be tested -- with `:AssertBufferMatches`
   * Count successful tests and failed assertions
   * Command to exclude, or specify the tests to play => `:UTPlay`, `UTIgnore`
   * Short-cuts to run the Unit Tests associated to a given vim script; Relies on: [Let-Modeline](http://github.com/LucHermitte/lh-misc/blob/master/plugin/let-modeline.vim)/[local\_vimrc](http://github.com/LucHermitte/local_vimrc)/[Project](http://www.vim.org/scripts/script.php?script_id=69) to set `g:UTfiles` (space separated list of glob-able paths), and on [`lh-vim-lib#path`](http://github.com/LucHermitte/lh-vim-lib)
@@ -32,8 +33,12 @@ _UT_ is another Unit Testing Framework for Vim, which main particularity is to f
     with vimrunner+rspec. See examples of use in
     [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) and
     [lh-brackets](http://github.com/LucHermitte/lh-brackets).
+  * Takes advantage of [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)'s `:COpen` command if installed
 
-#### Usage
+## Usage
+
+#### Start-up
+
   * Create a new vim script, it will be a Unit Testing Suite.
   * One of the first lines must contain
 
@@ -41,7 +46,7 @@ _UT_ is another Unit Testing Framework for Vim, which main particularity is to f
         UTSuite Some intelligible name for the suite
         ```
 
-  * Then you are free to directly assert anything you wish as long as it is a valid vim |expression|, e.g.
+  * Then you are free to directly assert anything you wish as long as it is a valid vim [`expression`](http://vimhelp.appspot.com/eval.txt.html#expression), e.g.
 
         ```
         Assert 1 > 2
@@ -79,20 +84,73 @@ _UT_ is another Unit Testing Framework for Vim, which main particularity is to f
         endfunction
         ```
 
-  * If you wish to see a set-up function executed before each test, define the `s:Setup()` function.
-  * If you wish to see a clean-up function executed after each test, define the `s:Teardown()` function.
   * Now run `:UTRun` on your test script (filename), and ... debug your failed assertions.
 
-##### Examples
+#### Fixtures
+
+Code can be executed before and after each test function with the optional
+special functions:
+
+  * `s:Setup()`: set-up function executed before each test
+  * `s:Teardown()`: clean-up function executed after each test
+
+#### Test on buffers
+
+Most `:AssertXxx` commands are dedicated to unit testing vim functions. A
+function returns a result and we test whether its value _equals_, _differs_,
+_matches_, _is_...
+
+Since V2, it's now possible set the content of a buffer before transforming it,
+and to test whether the new buffer state is as expected.
+
+```vim
+silent! call lh#window#create_window_with('new') " work around possible E36
+try
+    SetBufferContent a/file/name.txt
+    %s/.*/\U&/
+    AssertBufferMatch a/file/NAME.txt
+finally
+    bw
+endtry
+```
+
+Or, with [`:let=<<`](http://vimhelp.appspot.com/eval.txt.html#%3alet%3d%3c%3c)
+syntax
+
+```vim
+silent! call lh#window#create_window_with('new') " work around possible E36
+try
+    SetBufferContent << trim EOF
+    1
+    3
+    2
+    EOF
+
+    %sort
+
+    AssertBufferMatch << trim EOF
+    1
+    2
+    3
+    EOF
+finally
+    bw
+endtry
+```
+
+__Note__: `:SetBufferContent` and `:AssertBufferMatch` with `<< [trim] EOF`
+syntax can only be used within `s:TestXxx` functions.
+
+#### Examples
 See:
   * [tests/lh/UT.vim](tests/lh/UT.vim) for a classical test,
   * [tests/lh/UT-fixtures.vim](tests/lh/UT-fixtures.vim) for a test with fixtures.
+  * [tests/lh/UT-buf.vim](tests/lh/UT-buf.vim) for tests on buffer content.
 
 
-#### To Do
+## To Do
   * Check UT works fine under windows (where paths have spaces, etc.), and on UTF-8 files
   * Simplify `s:errors` functions
-  * Merge with Tom Link's tAssert plugin? (the UI is quite different)
   * Support Embedded comments like for instance:
 
         ```

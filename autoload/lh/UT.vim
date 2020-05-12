@@ -6,7 +6,7 @@
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
 " Version:      2.0.0
 " Created:      11th Feb 2009
-" Last Update:  08th May 2020
+" Last Update:  13th May 2020
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -19,6 +19,8 @@
 " 	v2.0.0: Set qf title
 " 	        Simplify lh#UT#assert_txt()
 " 	        Improve context on errors
+" 	        Add SetBufferContent
+" 	        Add AssertBufferMatches
 " 	v1.0.8: Accept space before function brackets
 " 	v1.0.5: Short-circuit `Toggle PluginAssertmode`
 " 	v1.0.4: Throw exceptions on lh-vim-lib assertion failures in AssertThrow
@@ -95,9 +97,17 @@ set cpo&vim
 
 " ## Functions {{{1
 "------------------------------------------------------------------------
+" ## Misc Functions     {{{1
+" # Version {{{2
+function! lh#UT#version()
+  return s:k_version
+endfunction
+
 " # Debug {{{2
-function! lh#UT#verbose(level)
-  let s:verbose = a:level
+let s:verbose = get(s:, 'verbose', 0)
+function! lh#UT#verbose(...)
+  if a:0 > 0 | let s:verbose = a:1 | endif
+  return s:verbose
 endfunction
 
 let s:print_test_names = 0
@@ -223,9 +233,10 @@ function! lh#UT#_callstack_with_linenr(throwpoint) abort
   for func in callstack
     if s:tempfile == func.script
       let func.script = substitute(func.script, escape(s:tempfile, '.\'), s:errors.crt_suite.file, 'g')
-      let func.pos    = func.pos - s:errors.offset
+      let func.pos    = func.pos - s:errors.offsets[func.pos+1] + 1
     endif
     " call s:errors.add(func.script, func.pos, '  called from '.(func.fname).'['.(func.offset).']')
+    " TODO: exact func.offset is messed up by SetBufferContent/AssertBufferMatch << EOF
     let msg .= "\n".(func.script).':'.(func.pos).':called from '.(func.fname).'['.(func.offset).']'
   endfor
   " TODO: check whether it's last or first entry in callstack
@@ -391,6 +402,42 @@ function! lh#UT#assert_txt(bang, line, ok, msg) abort
 endfunction
 
 " Function: lh#UT#assert_equals(bang, line, lhs, rhs) {{{4
+function! lh#UT#assert_buffer_match(bang, line, ref) abort
+  let content = getline(1, '$')
+  let ref     = type(a:ref) == type([])
+        \ ? a:ref
+        \ : readfile(a:ref)
+  if ref == content
+    let ok = 1
+    let msg = ''
+  else
+    let ok = 0
+    let r = { 'lines': ref, 'name': 'Expected'}
+    if type(a:ref) == type('')
+      let r['file'] = a:ref
+      let r['name'] .= ': '.r['file']
+    endif
+    let c = { 'lines': content, 'name': 'Observed' }
+    if !empty(expand('%'))
+      let c['name'] .= ': '.expand('%')
+      " The buffer may have a name, and yet not be saved.
+      " -> lh#diff knows how to handle the situation
+      let c['file'] = expand('%:p')
+    endif
+    let diff = lh#diff#compute(r, c)
+    let msg = c.name . ' buffer does not match ' . r.name . ' reference:'
+    if lh#option#is_unset(diff)
+      let msg .= 'Sorry diff cannot be displayed with this version of vim'
+    else
+      let a_filename = lh#string#or(get(c, 'file'), get(r, 'file'), '')
+      let ctx = map(copy(diff), 'a_filename."::".v:val')
+      let msg = join([msg]+ctx, "\n")
+    endif
+  endif
+  return lh#UT#assert_txt(a:bang, a:line, ok, msg)
+endfunction
+
+" Function: lh#UT#assert_equals(bang, line, lhs, rhs) {{{4
 function! lh#UT#assert_equals(bang, line, lhs, rhs) abort
   return lh#UT#assert_txt(a:bang, a:line, a:lhs == a:rhs,
         \ string(a:lhs) . ' is not equal to ' . string(a:rhs))
@@ -481,6 +528,19 @@ let s:k_getSNR   = [
       \ ''
       \ ]
 
+" Function: lh#UT#_reset_buffer(content) {{{4
+function! lh#UT#_reset_buffer(content) abort
+  %delete _
+  if  type(a:content) == type([])
+    let content = a:content
+  elseif  !filereadable(a:content)
+    throw "File <".a:content."> cannot be opened"
+  else
+    let content = readfile(a:content)
+  endif
+  call setline(1, content)
+endfunction
+
 " Function: s:PrepareFile(file) {{{4
 function! s:PrepareFile(file) abort
   if !filereadable(a:file)
@@ -492,43 +552,76 @@ function! s:PrepareFile(file) abort
   silent! let lines = readfile(a:file)
   let need_to_know_SNR = 0
   let suite = s:errors.new_suite(a:file)
+  let s:errors.offsets = []
 
   let isk = &isk
   set isk&vim
   try
+    let offset = 0
     let no = 0
+    let state = ''
+    let buf_content = []
     let last_line = len(lines)
     while no < last_line
+      let pos_in_src = no + 1 - offset
       if lines[no] =~ '\v^\s*:=%(debug\s+)=AssertTxt>'
-        let lines[no] = substitute(lines[no], '^\v\s*:=%(debug\s+)=\zsAssertTxt\s*(!=)\s*\(', 'call lh#UT#assert_txt("\1", '.(no+1).',', '')
+        let lines[no] = substitute(lines[no], '^\v\s*:=%(debug\s+)=\zsAssertTxt\s*(!=)\s*\(', 'call lh#UT#assert_txt("\1", '.pos_in_src.',', '')
 
       elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertEq%[uals]>'
-        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertEq%[uals]\s*(!=)\s*\(', 'call lh#UT#assert_equals("\1", '.(no+1).',', '')
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertEq%[uals]\s*(!=)\s*\(', 'call lh#UT#assert_equals("\1", '.pos_in_src.',', '')
 
       " elseif lines[no] =~ '\v^\s*:=%(debug\s+)=Assert>'
-        " let lines[no] = substitute(lines[no], '^\v\s*:=%(debug\s+)=\zsAssert\s*(!=)\s*(.*)', 'call lh#UT#assert_txt("\1", '.(no+1).', \2, string(\2))', '')
+        " let lines[no] = substitute(lines[no], '^\v\s*:=%(debug\s+)=\zsAssert\s*(!=)\s*(.*)', 'call lh#UT#assert_txt("\1", '.pos_in_src.', \2, string(\2))', '')
 
       elseif lines[no] =~ '^\v\s*:=%(debug\s+)=AssertDiff%[ers]>'
-        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertDiff%[ers]\s*(!=)\s*\(', 'call lh#UT#assert_differs("\1", '.(no+1).',', '')
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertDiff%[ers]\s*(!=)\s*\(', 'call lh#UT#assert_differs("\1", '.pos_in_src.',', '')
 
       elseif lines[no] =~ '^\v\s*:=%(debug\s+)=AssertIs>'
-        let lines[no] = substitute(lines[no], '^\v\s*:=%(debug\s+)=\zsAssertIs\s*(!=)\s*\(', 'call lh#UT#assert_is("\1", '.(no+1).',', '')
+        let lines[no] = substitute(lines[no], '^\v\s*:=%(debug\s+)=\zsAssertIs\s*(!=)\s*\(', 'call lh#UT#assert_is("\1", '.pos_in_src.',', '')
 
       elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertIsNot>'
-        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertIsNot\s*(!=)\s*\(', 'call lh#UT#assert_is_not("\1", '.(no+1).',', '')
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertIsNot\s*(!=)\s*\(', 'call lh#UT#assert_is_not("\1", '.pos_in_src.',', '')
 
       elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertMatch%[es]>'
-        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertMatch%[es]\s*(!=)\s*\(', 'call lh#UT#assert_matches("\1", '.(no+1).',', '')
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertMatch%[es]\s*(!=)\s*\(', 'call lh#UT#assert_matches("\1", '.pos_in_src.',', '')
 
       elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertRel%[ation]>'
-        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertRel%[ation]\s*(!=)\s*\(', 'call lh#UT#assert_relation("\1", '.(no+1).',', '')
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertRel%[ation]\s*(!=)\s*\(', 'call lh#UT#assert_relation("\1", '.pos_in_src.',', '')
 
       elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertTh%[rows]>'
         " TODO: stringify param 1
-        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertTh%[rows]\s*(!=)\s*(.*)', 'call lh#UT#assert_throws("\1", '.(no+1).', "\2")', '')
+        let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertTh%[rows]\s*(!=)\s*(.*)', 'call lh#UT#assert_throws("\1", '.pos_in_src.', "\2")', '')
+
+      elseif lines[no] =~ '\v^\s*:=%(debug\s+)=SetBuf%[ferContent]>'
+        if  lines[no] =~ '<<'
+          if  !empty(state)
+            throw "Cannot set buffer content with << with while we are ".state." at line: ".pos_in_src
+          endif
+          let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsSetBuf%[ferContent]\s*\<\<', 'let l:__UT_buf_content =<<', '')
+          let end_marker = matchstr(lines[no], '\<\S\+\>\s*$')
+          let state = 'setting buffer content'
+
+        else
+          let lines[no] = substitute(lines[no],  '\v^\s*:=%(debug\s+)=\zsSetBuf%[ferContent]\s*(.{-})\s*$', '\="call lh#UT#_reset_buffer(".string(submatch(1)).")"', '')
+        endif
+
+      elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertBuf%[ferMatches]>'
+
+        if  lines[no] =~ '<<'
+          if  !empty(state)
+            throw "Cannot assert buffer content with << with while we are ".state." at line: ".pos_in_src
+          endif
+          let bang = matchstr(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertBuf%[ferMatches]\s*\zs(!=)\ze\s*\<\<')
+          let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertBuf%[ferMatches]\s*%(!=)\s*\<\<', 'let l:__UT_buf_match =<<', '')
+          let end_marker = matchstr(lines[no], '\<\S\+\>\s*$')
+          let state = 'asserting buffer content'
+
+        else
+          let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertBuf%[ferMatches]\s*(!=)\s*(.{-})\s*$', '\="call lh#UT#assert_buffer_match(".string(submatch(1)).", ".pos_in_src.", ".string(submatch(2)).")"', '')
+        endif
 
       elseif lines[no] =~ '\v^\s*:='.s:k_commands.'>'
-        let lines[no] = substitute(lines[no], '\v^\s*:='.s:k_commands.'!= \zs', (no+1).' ', '')
+        let lines[no] = substitute(lines[no], '\v^\s*:='.s:k_commands.'!= \zs', pos_in_src.' ', '')
 
       elseif lines[no] =~ '\v^\s*:=function!=\s+s:Test'
         let test_name = matchstr(lines[no], '\v^\s*:=function!=\s+s:\zsTest\S{-}\ze\s*\(')
@@ -537,24 +630,38 @@ function! s:PrepareFile(file) abort
         let suite.teardown = 1
       elseif lines[no] =~ '\v^\s*:=function!=\s+s:Setup'
         let suite.setup = 1
+      elseif exists('end_marker') && lines[no] =~ '^\s*'.end_marker.'\s*$'
+        unlet end_marker
+        if state =~ '^set'
+          call insert(lines, 'call lh#UT#_reset_buffer(l:__UT_buf_content)', no+1)
+        elseif state =~ '^assert'
+          call insert(lines, 'call lh#UT#assert_buffer_match("'.bang.'", '.pos_in_src.', l:__UT_buf_match)', no+1)
+        else
+          throw "Unexpected stituation! (".state.")"
+        endif
+        let state = ''
+        let last_line += 1
+        let offset += 1
       endif
       if lines[no] =~ '\v^\s*:=function!=\s+s:'
         let need_to_know_SNR = 1
       endif
       let no += 1
+      call add(s:errors.offsets, offset)
     endwhile
 
     " Inject s:getSNR() in the script if there is a s:Function in the Test script
-    let s:errors.offset = 0
+    let offset = 0
     if need_to_know_SNR
       call extend(lines, s:k_getSNR, 0)
-      let s:errors.offset += len(s:k_getSNR)
+      let offset += len(s:k_getSNR)
     endif
 
     " Inject local evualation of expressions in the script
     " => takes care of s:variables, s:Functions(), and l:variables
     call extend(lines, s:k_local_evaluate, 0)
-    let s:errors.offset += len(s:k_local_evaluate)
+    let offset += len(s:k_local_evaluate)
+    call map(s:errors.offsets, 'v:val + offset')
   finally
     let &isk=isk
   endtry

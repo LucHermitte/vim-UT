@@ -1,5 +1,5 @@
-*UT.txt*                Unit Testing Framework for Vim (v1.0.0)
-                        For Vim version 7+.    Last change: 23rd May 2016
+*UT.txt*                Unit Testing Framework for Vim (v2.0.0)
+                        For Vim version 7+.    Last change: 09th May 2020
 
                         By Luc Hermitte
                         hermitte {at} free {dot} fr
@@ -24,28 +24,33 @@ the |quickfix| window with the assertion failures.
 
 Features~
 - Assertion failures are reported in the |quickfix| window
-- Assertion syntax is simple, check Tom Link's suite, it's the same
-- Supports banged ":Assert!" to stop processing a given test on failed
+- Meant to be simple to use
+  - Simple assertion syntax (`:Assert expression`, `:AssertEquals(ref, expr)` ...)
+  - Supports |:Comments|
+  - Automatic registration of test functions
+    - All the `s:Test*` functions of a suite are executed (almost)
+      independently (i.e., a critical `:Assert!` failure will stop the Test of
+      the function, and |lh#UT| will proceed to the next |s:Test()| function
+  - A suite == a file
+  - Several |s:Test()| functions per suite
+  - Callstack is decoded and expanded in the quickfix window on uncaught
+    |exception|s.
+- Supports banged "`:Assert!`" to stop processing a given test on failed
   assertions
-- All the |s:Test()| functions of a suite are executed (almost)
-  independently (i.e., a critical ":Assert!" failure will stop the Test of
-  the function, and |lh#UT| will proceed to the next |s:Test()| function
 - Lightweight and simple to use: there is only one command defined, all the
   other definitions are kept in an autoload plugin.
-- A suite == a file
-- Several |s:Test()| functions per suite
-- +optional |s:Setup()|, |s:Teardown()|
-- Supports |:Comments|
+- Fixtures:
+  - optional |s:Setup()|, |s:Teardown()| executed before and after each test
 - |local-function|s, |script-variable|s, and |local-variable|s are supported
-- Takes advantage of |BuildToolsWrapper|'s |:Copen| command if installed
 - Counts successful tests and not successful assertions
 - Short-cuts to run the Unit Tests associated to a given vim script; Relies
   on: |Let-Modeline|, |local_vimrc|/|project.vim| to set |g:UTfiles| (space
   separated list of glob-able paths), and on |lhvl#path|.
 - Command to exclude, or specify the tests to play => |:UTPlay|, |UTIgnore|
+- Takes advantage of |BuildToolsWrapper|'s |:Copen| command if installed
 
 Requirements~
-This suite requires Vim 7.1 and |lh-vim-lib| v2.2.0+.
+This suite requires Vim 7.1 and |lh-vim-lib| v5.1.0+.
 
 
 ------------------------------------------------------------------------------
@@ -53,7 +58,7 @@ USAGE                                               *UT-usage*         {{{1
 First, create a new vim script, it will be a Unit Testing Suite.
 
                                                     *:UTSuite*
-One of the first lines must contain >
+One of the first lines **must** contain >
   UTSuite Some intelligible name for the suite
 <
                                                     *:Assert*
@@ -61,6 +66,7 @@ One of the first lines must contain >
                                                     *:AssertEquals()*
                                                     *:AssertDiffers()*
                                                     *:AssertIs()*
+                                                    *:AssertIsNot()*
                                                     *:AssertMatches()*
                                                     *:AssertRelation()*
                                                     *:AssertThrows()*
@@ -124,6 +130,62 @@ to run all tests matching `tests/lh/*.vim` in |getcwd()|.
 
 
 ------------------------------------------------------------------------------
+TESTS ON BUFFER CONTENT                              *UT-buffer*       {{{1
+Since version 2.0.0, simplified ways to set and test |buffers| content have been
+provided.
+
+                                                    *:SetBufferContent*
+This fake command resets the content the content of the buffer.
+
+Warnings:
+- Be sure to be in a new buffer. By default, the current buffer is the
+  instanciated test script being executed.
+- No |autocommand| will be triggerred, IOW no action is done to detect the
+  |filetype| or act on the buffer filetype.
+
+
+:SetBufferContent {filename}                        *:SetBufferContent-file*
+                        The buffer content is reset with the content of the
+                        file specified.
+                        Note that `:new | :SetBufferContent filename` could be
+                        simplified into `:sp filename` which will also set the
+                        filetype. `:SetBuffuerContent` becomes interresting to
+                        use a same buffer for all tests, instead of creating
+                        and removing a buffer before and after each test.
+
+:SetBufferContent << [trim] {marker}                *:SetBufferContent<<*
+line...
+line...
+{marker}
+                        The buffer content is reset with the lines specified
+                        in the following section. Internally, this command
+                        relies on |:let=<<|. See its documentation regarding
+                        "trim" or {marker}.
+
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                                                    *:AssertBufferMatches*
+This fake command tests whether the content of the current buffer is identical
+to the specified file or a list of lines.
+
+Differences will be displayed in the |quickfix-window|. Internally, they are
+computed with |lh#diff#compute()|.
+
+
+:AssertBufferMatches[!] {filename}                  *:AssertBufferMatches-file*
+                        The buffer content is tested against the file
+                        specified.
+
+:AssertBufferMatches[!] << [trim] {marker}          *:AssertBufferMatches<<*
+line...
+line...
+{marker}
+                        The buffer content is tested against the lines
+                        specified in the following section. Internally, this
+                        command relies on |:let=<<|. See its documentation
+                        regarding "trim" or {marker}.
+
+------------------------------------------------------------------------------
 UT API                                               *UT-API*          {{{1
 
 *should#be#dict()*    returns whether the parameter is a |Dictionary|
@@ -133,32 +195,31 @@ UT API                                               *UT-API*          {{{1
 *should#be#number()*  returns whether the parameter is a |expr-number|
 *should#be#string()*  returns whether the parameter is a |expr-string|
 
+Example: >
+
+  let d = {}
+  Assert should#be#dict(d)
+
 
 ------------------------------------------------------------------------------
 EXAMPLES                                             *UT-examples*     {{{1
 See:
-- {rtp}/tests/lh/UT.vim tests/lh/UT.vim for a classical test,
-- {rtp}/tests/lh/UT-fixtures.vim tests/lh/UT-fixtures.vim for a test with
-  fixtures.
+- {rtp}/tests/lh/UT.vim for a classical test,
+- {rtp}/tests/lh/UT-fixtures.vim for a test with fixtures.
+- {rtp}/tests/lh/UT-buf.vim for a test on buffer manipulation
 
 
 ------------------------------------------------------------------------------
 TO DO                                                *UT-todo*         {{{1
-- Add |'efm'| for VimL errors like the one produced by >
-    :Assert 0 + [0]
 - Check UT works fine under windows (where paths have spaces, etc), and on
   UTF-8 files
-- Simplify "s:errors" functions
-- Merge with Tom Link's tAssert plugin? (the UI is quite different)
-- |:AssertEquals| that shows the name of both expressions and their values as
-  well -- a correct distinction of both parameters will be tricky with regexes
-  ; using functions will loose either the name, or the value in case of
-  local/script variables use ; we need macros /à la C/...
+- Simplify "`s:errors"` functions
 - Support Embedded comments like for instance: >
     Assert 1 == 1 " 1 must value 1
 - Ways to test buffers produced
 - Always execute |s:Teardown()| -- move its call to a |:finally| bloc
 - Find a way to prevent the potential script scope pollution
+- Add a summary at the end of the execution
 
 
 ------------------------------------------------------------------------------
@@ -171,6 +232,8 @@ kind of assertions.
 In order to be able to produce the |quickfix| entries, the plugin first parses
 the Unit Test file to complete all |:Assert| occurrences with extra
 information about the line number where the assertion is made.
+Incidentally, this permits to reduce plugin footprint: none of |:Assert|XXX
+commands are actual commands.
 
 
 ------------------------------------------------------------------------------
@@ -182,12 +245,17 @@ You may also want to have a look at:
   http://www.vim.org/scripts/script.php?script_id=1125
 - Meikel Brandmeyer's |vimTAP| plugin
   http://www.vim.org/scripts/script.php?script_id=2213
+- Ben Fritz's |vim-2html-test| plugin
+  http://code.google.com/p/vim-2html-test/
+- Ingo Karkat's |runVimTests|| plugin
+  http://www.vim.org/scripts/script.php?script_id=2565
 - Kana's vim-spec plugin http://github.com/kana/vim-spec
 - Andrew Radev's vimrunner http://github.com/AndrewRadev/vimrunner
+- Dhruva Sagar's |vim-testify| plugin
+  https://github.com/dhruvasagar/vim-testify
 
 
 }}}1
 ------------------------------------------------------------------------------
- © Luc Hermitte, 2010-2016, http://github.com/LucHermitte/vim-UT
- VIM: let b:VS_language = 'american'
+ © Luc Hermitte, 2010-2020, http://github.com/LucHermitte/vim-UT
  vim:ts=8:sw=4:tw=80:fo=tcq2:isk=!-~,^*,^\|,^\":ft=help:fdm=marker:
