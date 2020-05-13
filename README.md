@@ -171,7 +171,7 @@ try
     3
     EOF
 finally
-    bw
+    silent bw!
 endtry
 ```
 
