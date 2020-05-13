@@ -30,12 +30,26 @@ _UT_ is another Unit Testing Framework for Vim, which main particularity is to f
   * Buffer content can be tested -- with `:AssertBufferMatches`
   * Count successful tests and failed assertions
   * Command to exclude, or specify the tests to play => `:UTPlay`, `UTIgnore`
+  * Add [`:debug`](http://vimhelp.appspot.com/repeat.txt.html#%3adebug) before an assertion to debug its evaluation
   * Short-cuts to run the Unit Tests associated to a given vim script; Relies on: [Let-Modeline](http://github.com/LucHermitte/lh-misc/blob/master/plugin/let-modeline.vim)/[local\_vimrc](http://github.com/LucHermitte/local_vimrc)/[Project](http://www.vim.org/scripts/script.php?script_id=69) to set `g:UTfiles` (space separated list of glob-able paths), and on [`lh-vim-lib#path`](http://github.com/LucHermitte/lh-vim-lib)
   * [Helper scripts](doc/rspec-integration.md) are provided to help integration
     with vimrunner+rspec. See examples of use in
     [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) and
     [lh-brackets](http://github.com/LucHermitte/lh-brackets).
   * Takes advantage of [BuildToolsWrapper](http://github.com/LucHermitte/vim-build-tools-wrapper)'s `:COpen` command if installed
+
+## Demo
+
+Here is a little screencast to see how things are displayed when errors are
+detected.
+
+Notes:
+- the diff-mode is entered with `D` -- sorry, I wasn't able to display the keys
+  typed in this screencast.
+- the signs and balloons are automatically added by
+  [lh-compil-hints](https://github.com/LucHermitte/lh-compil-hints)
+
+![vim-UT demo](doc/screencast-vim-UT.gif "vim-UT demo")
 
 ## Usage
 
@@ -44,47 +58,58 @@ _UT_ is another Unit Testing Framework for Vim, which main particularity is to f
   * Create a new vim script, it will be a Unit Testing Suite.
   * One of the first lines must contain
 
-        ```
-        UTSuite Some intelligible name for the suite
-        ```
+    ```vim
+    UTSuite Some intelligible name for the suite
+    ```
 
   * Then you are free to directly assert anything you wish as long as it is a valid vim [`expression`](http://vimhelp.appspot.com/eval.txt.html#expression), e.g.
 
-        ```
-        Assert 1 > 2
-        Assert 1 > 0
-        Assert s:foo > s:Bar(g:var + 28) / strlen("foobar")
+    ```vim
+    Assert 1 > 2
+    Assert 1 > 0
+    Assert s:foo > s:Bar(g:var + 28) / strlen("foobar")
 
-        AssertTxt! (s:foo > s:Bar(g:var+28),
-                \, s:foo." isn't bigger than s:Bar(".g:var."+28)")
-        AssertEquals('a', 'a')
-        AssertDiffers('a', 'b')
-        let dict = {}
-        AssertIs(dict, dict)
-        AssertMatch('abc', 'a')
-        AssertRelation(1, '<', 2)
-        AssertThrows 0 + [0]
-        ```
+    debug AssertTxt (s:foo > s:Bar(g:var+28)
+          \, s:foo." isn't bigger than s:Bar(".g:var."+28)")
+    AssertEquals!('a', 'a')
+    AssertDiffers('a', 'a')
+    let dict = {}
+    AssertIs(dict, dict)
+    AssertIsNot(dict, dict)
+    AssertMatch('abc', 'a')
+    AssertRelation(1, '<', 2)
+    AssertThrows 0 + [0]
+    ```
+
+    ```
+    tests/lh/README.vim|| SUITE <[lh#UT] Demonstrate assertions in README>
+    tests/lh/README.vim|27 error| assertion failed: 1 > 2
+    tests/lh/README.vim|31 error| assertion failed: s:foo > s:Bar(g:var + 28) / strlen("foobar")
+    tests/lh/README.vim|33 error| assertion failed: -1 isn't bigger than s:Bar(5+28)
+    tests/lh/README.vim|37 error| assertion failed: 'a' is not different from 'a'
+    tests/lh/README.vim|40 error| assertion failed: {} is not identical to {}
+    ...
+    ```
 
   * or to define as many independent tests as you wish. A test is a function with a name starting with `s:Test`. Even if a test critically fails, the next test will be executed, e.g.
 
-        ```
-        function s:Test1()
-          let var = SomeFunction()
-          Assert! type(var) == type(0)
-          Assert var < 42
-          Assert! var > 0
+    ```vim
+    function s:Test1()
+      let var = SomeFunction()
+      Assert! type(var) == type(0)
+      Assert var < 42
+      Assert! var > 0
 
-          " Some other code that won't be executed if the previous assertion failed
-          " /*the wiki does not recognizes vim comments*/
-          let i = var / 42.0
-          Comment This comment may never be displayed if {var} is negative or not a number
-        endfunction
+      " Some other code that won't be executed if the previous assertion failed
+      " /*the wiki does not recognizes vim comments*/
+      let i = var / 42.0
+      Comment "This comment may never be displayed if {var} is negative or not a number"
+    endfunction
 
-        function s:Test2()
-          Assert s:what != Ever()
-        endfunction
-        ```
+    function s:Test2()
+      Assert s:what != Ever()
+    endfunction
+    ```
 
   * Now run `:UTRun` on your test script (filename), and ... debug your failed assertions.
 
@@ -142,12 +167,25 @@ try
 
     AssertBufferMatch << trim EOF
     1
-    2
+    4
     3
     EOF
 finally
     bw
 endtry
+```
+
+which results into
+
+```
+tests/lh/README.vim|78 error| assertion failed: Observed buffer does not match Expected reference:
+|| ---
+|| +++
+|| @@ -1,3 +1,3 @@
+||  1
+|| -4
+|| +2
+||  3
 ```
 
 __Note__: `:SetBufferContent` and `:AssertBufferMatch` with `<< [trim] EOF`
@@ -165,9 +203,9 @@ See:
   * Simplify `s:errors` functions
   * Support Embedded comments like for instance:
 
-        ```
-        Assert 1 == 1 " 1 must value 1
-        ```
+    ```vim
+    Assert 1 == 1 " 1 must value 1
+    ```
 
   * Ways to test buffers produced
   * Find a way to prevent the potential script scope pollution
@@ -182,24 +220,30 @@ See:
 ## Installation
   * Requirements: Vim 7.+, [lh-vim-lib](http://github.com/LucHermitte/lh-vim-lib) v5.1.0
   * With [vim-addon-manager](https://github.com/MarcWeber/vim-addon-manager), install vim-UT (this is the preferred method because of the dependencies)
-        ```vim
-        ActivateAddons UT
-        ```
-  *  or with [vim-flavor](http://github.com/kana/vim-flavor), which also
-     handles dependencies
-        ```
-        flavor 'LucHermitte/vim-UT'
-        ```
+
+    ```vim
+    ActivateAddons UT
+    ```
+
+  * or with [vim-flavor](http://github.com/kana/vim-flavor), which also handles
+    dependencies
+
+    ```
+    flavor 'LucHermitte/vim-UT'
+    ```
   * or you can clone the git repositories
-        ```vim
-        git clone git@github.com:LucHermitte/lh-vim-lib.git
-        git clone git@github.com:LucHermitte/vim-UT.git
-        ```
+
+    ```bash
+    git clone git@github.com:LucHermitte/lh-vim-lib.git
+    git clone git@github.com:LucHermitte/vim-UT.git
+    ```
+
   * or with Vundle/NeoBundle:
-        ```vim
-        Bundle 'LucHermitte/lh-vim-lib'
-        Bundle 'LucHermitte/vim-UT'
-        ```
+
+    ```vim
+    Bundle 'LucHermitte/lh-vim-lib'
+    Bundle 'LucHermitte/vim-UT'
+    ```
 
 ## Other Tests related plugins for Vim
   * Tom Link's [tAssert plugin](http://www.vim.org/scripts/script.php?script_id=1730), and [spec\_vim plugin](https://github.com/tomtom/spec_vim),

@@ -48,6 +48,7 @@ Features~
   on: |Let-Modeline|, |local_vimrc|/|project.vim| to set |g:UTfiles| (space
   separated list of glob-able paths), and on |lhvl#path|.
 - Command to exclude, or specify the tests to play => |:UTPlay|, |UTIgnore|
+- Add |:debug| before an assertion to debug its evaluation
 - Takes advantage of |BuildToolsWrapper|'s |:Copen| command if installed
 
 Requirements~
@@ -76,7 +77,7 @@ valid vim |expression|, e.g. >
     Assert 1 > 2
     Assert 1 > 0
     Assert s:foo > s:Bar(g:var + 28) / strlen("foobar")
-    AssertTxt! (s:foo > s:Bar(g:var+28),
+    debug AssertTxt! (s:foo > s:Bar(g:var+28)
         \, s:foo." isn't bigger than s:Bar(".g:var."+28)")
     AssertEquals('a', 'a')
     AssertDiffers('a', 'b')
@@ -88,6 +89,10 @@ valid vim |expression|, e.g. >
 or to define as many independent tests as you wish.
 
 If banged, the test will be aborted on an assertion failure.
+
+Note that each assertion can be debugged by prepending the `Assert` (fake)
+command with |:debug|. This can be usefull to debug assertions that call buggy
+functions.
 
                                                     *:Comment*
 Comments may be added to the |quickfix| report thanks to the |:Comment|
