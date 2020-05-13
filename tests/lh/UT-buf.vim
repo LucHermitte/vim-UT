@@ -7,7 +7,7 @@
 " Version:      2.0.0.
 let s:k_version = '200'
 " Created:      06th May 2020
-" Last Update:  08th May 2020
+" Last Update:  13th May 2020
 "------------------------------------------------------------------------
 " Description:
 "       Unit Test for UT's :SetBufferContent & :AssertBufferMatch
@@ -26,75 +26,55 @@ let s:cpo_save=&cpo
 set cpo&vim
 
 "------------------------------------------------------------------------
-function! s:Test_SetBuffer_EOF()
+function! s:BeforeAll() abort
   silent! call lh#window#create_window_with('new') " work around possible E36
   file toto.test
-  try
-    SetBufferContent << trim EOF
-    1
-    2
-    3
-    EOF
-    call lh#UT#assert_buffer_match('', 37, ['1', '2', '3'])
-  finally
-    silent! bw!
-  endtry
+endfunction
+
+function! s:AfterAll() abort
+  silent! bw!
+endfunction
+
+"------------------------------------------------------------------------
+function! s:Test_SetBuffer_EOF()
+  SetBufferContent << trim EOF
+  1
+  2
+  3
+  EOF
+  call lh#UT#assert_buffer_match('', 37, ['1', '2', '3'])
 endfunction
 
 function! s:Test_SetBuffer_file()
-  silent! call lh#window#create_window_with('new') " work around possible E36
-  file toto.test
-  try
-    SetBufferContent tests/lh/1-2-3.txt
-    call lh#UT#assert_buffer_match('', 49, ['1', '2', '3'])
-  finally
-    silent! bw!
-  endtry
+  SetBufferContent tests/lh/1-2-3.txt
+  call lh#UT#assert_buffer_match('', 49, ['1', '2', '3'])
 endfunction
 
 function! s:Test_AssertBuffer_EOF()
-  silent! call lh#window#create_window_with('new') " work around possible E36
-  file toto.test
-  try
-    SetBufferContent << trim EOF
-    1
-    2
-    3
-    EOF
-    AssertBufferMatch << trim EOF
-    1
-    2
-    3
-    EOF
-  finally
-    silent! bw!
-  endtry
+  SetBufferContent << trim EOF
+  1
+  2
+  3
+  EOF
+  AssertBufferMatch << trim EOF
+  1
+  2
+  3
+  EOF
 endfunction
 
 function! s:Test_AssertBuffer_file()
-  silent! call lh#window#create_window_with('new') " work around possible E36
-  file toto.test
-  try
-    SetBufferContent << trim EOF
-    1
-    2
-    3
-    EOF
-    AssertBufferMatch tests/lh/1-2-3.txt
-  finally
-    silent! bw!
-  endtry
+  SetBufferContent << trim EOF
+  1
+  2
+  3
+  EOF
+  AssertBufferMatch tests/lh/1-2-3.txt
 endfunction
 
 function! s:Test_AssertBuffer_file_file()
-  silent! call lh#window#create_window_with('new') " work around possible E36
-  file toto.test
-  try
-    SetBufferContent tests/lh/1-2-3.txt
-    AssertBufferMatch tests/lh/1-2-3.txt
-  finally
-    silent! bw!
-  endtry
+  SetBufferContent tests/lh/1-2-3.txt
+  AssertBufferMatch tests/lh/1-2-3.txt
 endfunction
 
 "------------------------------------------------------------------------

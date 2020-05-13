@@ -21,7 +21,9 @@ _UT_ is another Unit Testing Framework for Vim, which main particularity is to f
 
 #### Other features
   * Lightweight and simple to use: there is only one command defined, all the other definitions are kept in an autoload plugin.
-  * Fixtures: optional `s:Setup()`, `s:Teardown()` executed before and after each test
+  * Fixtures:
+    * optional `s:Setup()`, `s:Teardown()` executed before and after each test
+    * optional `s:BeforeAll()`, `s:AfterAll()` executed once before and after all tests from a suite
   * Supports banged `:Assert!` to stop processing a given test on failed assertions
   * `s:LocalFunctions()`, `s:variables`, and `l:variables` are supported
   * Buffer content can be set -- with `:SetBufferContent`
@@ -91,8 +93,10 @@ _UT_ is another Unit Testing Framework for Vim, which main particularity is to f
 Code can be executed before and after each test function with the optional
 special functions:
 
-  * `s:Setup()`: set-up function executed before each test
-  * `s:Teardown()`: clean-up function executed after each test
+  * `s:Setup()`: set-up function executed __before each__ test
+  * `s:Teardown()`: clean-up function executed __after each__ test
+  * `s:BeforeAll()`: set-up function execute once __before all__ tests from a suite
+  * `s:AfterAll()`: clean-up function execute once __after all__ tests from a suite
 
 #### Test on buffers
 
@@ -158,7 +162,6 @@ See:
         ```
 
   * Ways to test buffers produced
-  * Always execute `s:Teardown()` -- move its call to a :finally bloc
   * Find a way to prevent the potential script scope pollution
   * Add a summary at the end of the execution
 

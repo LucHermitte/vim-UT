@@ -41,6 +41,7 @@ Features~
   other definitions are kept in an autoload plugin.
 - Fixtures:
   - optional |s:Setup()|, |s:Teardown()| executed before and after each test
+  - optional |s:BeforeAll()|, |s:AfterAll()| executed once before and after all tests from a suite
 - |local-function|s, |script-variable|s, and |local-variable|s are supported
 - Counts successful tests and not successful assertions
 - Short-cuts to run the Unit Tests associated to a given vim script; Relies
@@ -109,12 +110,24 @@ critically fails, the next test will be executed, e.g. >
       Assert s:what != Ever()
     endfunction
 <
-                                                    *s:Setup()* *s:Teardown()*
-If you wish to see a set-up function executed before each test, define the
-|s:Setup()| function.
+                                                    *UT-fixtures*
+Reusable test-local Fixtures~
+    If you wish to see a set-up function executed before each test, define the
+    *s:Setup()* function.
+    This function is usually named `BeforeEach` is other frameworks. If you'd
+    rather user this name, please open an issue.
 
-If you wish to see a clean-up function executed after each test, define the
-|s:Teardown()| function.
+    If you wish to see a clean-up function executed after each test, define
+    the *s:Teardown()* function.
+    This function is usually named `AfterEach` is other frameworks. If you'd
+    rather user this name, please open an issue.
+
+Reusable suite-local Fixtures~
+    If you wish to see a set-up function executed once before all tests from a
+    suite, define the *s:BeforeAll()* function.
+
+    If you wish to see a clean-up function executed once after all tests from
+    a suite, define the *s:AfterAll()* function.
 
                                                     *:UTRun*
 Finally run |:UTRun| on your test script (filename), and ... debug your failed
@@ -217,7 +230,6 @@ TO DO                                                *UT-todo*         {{{1
 - Support Embedded comments like for instance: >
     Assert 1 == 1 " 1 must value 1
 - Ways to test buffers produced
-- Always execute |s:Teardown()| -- move its call to a |:finally| bloc
 - Find a way to prevent the potential script scope pollution
 - Add a summary at the end of the execution
 

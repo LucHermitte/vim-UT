@@ -21,6 +21,7 @@
 " 	        Improve context on errors
 " 	        Add SetBufferContent
 " 	        Add AssertBufferMatches
+" 	        Add BeforeAll & After All fixture
 " 	v1.0.8: Accept space before function brackets
 " 	v1.0.5: Short-circuit `Toggle PluginAssertmode`
 " 	v1.0.4: Throw exceptions on lh-vim-lib assertion failures in AssertThrow
@@ -268,17 +269,17 @@ augroup END
 function! s:RunOneTest(file) dict abort
   try
     let s:errors.crt_test = self
-    if has_key(s:errors.crt_suite, 'setup')
-      let F = function(s:errors.get_current_SNR().'Setup')
-      call F()
+    if has_key(s:errors.crt_suite, 'fixture_setup')
+      let l:F = function(s:errors.get_current_SNR().'Setup')
+      call l:F()
     endif
     try
-      let F = function(s:errors.get_current_SNR(). self.name)
-      call F()
+      let l:F = function(s:errors.get_current_SNR(). self.name)
+      call l:F()
     finally
-      if has_key(s:errors.crt_suite, 'teardown')
-        let F = function(s:errors.get_current_SNR().'Teardown')
-        call F()
+      if has_key(s:errors.crt_suite, 'fixture_teardown')
+        let l:F = function(s:errors.get_current_SNR().'Teardown')
+        call l:F()
       endif
     endtry
   catch /Assert: abort/
@@ -627,9 +628,13 @@ function! s:PrepareFile(file) abort
         let test_name = matchstr(lines[no], '\v^\s*:=function!=\s+s:\zsTest\S{-}\ze\s*\(')
         call suite.add_test(test_name)
       elseif lines[no] =~ '\v^\s*:=function!=\s+s:Teardown'
-        let suite.teardown = 1
+        let suite.fixture_teardown = 1
       elseif lines[no] =~ '\v^\s*:=function!=\s+s:Setup'
-        let suite.setup = 1
+        let suite.fixture_setup = 1
+      elseif lines[no] =~ '\v^\s*:=function!=\s+s:BeforeAll'
+        let suite.fixture_before_all = 1
+      elseif lines[no] =~ '\v^\s*:=function!=\s+s:AfterAll'
+        let suite.fixture_after_all = 1
       elseif exists('end_marker') && lines[no] =~ '^\s*'.end_marker.'\s*$'
         unlet end_marker
         if state =~ '^set'
@@ -683,10 +688,21 @@ function! s:RunOneFile(file) abort
     let s:errors.nb_success = 0 " Motoya Kurotsu's patch
     if !empty(s:errors.crt_suite.tests)
       call s:Verbose('Executing tests: '.join(s:errors.crt_suite.tests, ', '))
-      for test in s:errors.crt_suite.tests
-        call test.run(a:file)
-        let s:errors.nb_success += 1 - test.failed
-      endfor
+      try
+        if has_key(s:errors.crt_suite, 'fixture_before_all')
+          let l:F = function(s:errors.get_current_SNR().'BeforeAll')
+          call l:F()
+        endif
+        for test in s:errors.crt_suite.tests
+          call test.run(a:file)
+          let s:errors.nb_success += 1 - test.failed
+        endfor
+      finally
+        if has_key(s:errors.crt_suite, 'fixture_after_all')
+          let l:F = function(s:errors.get_current_SNR().'AfterAll')
+          call l:F()
+        endif
+      endtry
     endif
 
   catch /Assert: abort/
