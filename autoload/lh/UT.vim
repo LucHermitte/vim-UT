@@ -187,19 +187,20 @@ function! s:errors.get_current_SNR() abort
   return self.crt_suite.snr
 endfunction
 
-" Function: s:errors.add(FILE, LINE, message) dict {{{4
-function! s:errors.add(FILE, LINE, message) dict abort
+" Function: s:errors.add(FILE, LINE, message [, success]) dict {{{4
+function! s:errors.add(FILE, LINE, message, ...) dict abort
   let msg = ''
   if lh#option#get('UT_print_test', 0, 'g') && has_key(s:errors, 'crt_test')
     let msg .= '['. s:errors.crt_test.name .'] '
   endif
   let message = split(a:message, "\n")
   let msg.= message[0]
+  let success = get(a:, 1, 0)
   let qfe = {
         \ 'filename': a:FILE,
         \ 'lnum'    : a:LINE,
         \ 'text'    : msg,
-        \ 'type'    : 'E'
+        \ 'type'    : success ? '' : 'E'
         \}
   call add(self.qf, qfe)
   let self.qf += message[1:]
@@ -317,7 +318,7 @@ endfunction
 " Function: s:ConcludeSuite() dict {{{4
 function! s:ConcludeSuite() dict abort
   let name = self.name
-  call s:errors.add(self.file, 0,  'SUITE<'. name .'> '. (s:errors.nb_success) .'/'. (s:errors.nb_tests) . ' tests successfully executed.')
+  call s:errors.add(self.file, 0,  'SUITE <'. name .'> '. (s:errors.nb_success) .'/'. (s:errors.nb_tests) . ' tests successfully executed.')
   " call add(s:errors.qf, 'SUITE<'. self.name.'> '. s:rrors.nb_success .'/'. s:errors.nb_tests . ' tests successfully executed.')
   return (s:errors.nb_tests) - (s:errors.nb_success)
 endfunction
@@ -758,7 +759,7 @@ function! s:DefineCommands() abort
 
   command! -nargs=1 Comment
         \ let s:a = s:Decode(<q-args>)                                            |
-        \ call s:errors.add(s:a.file, s:a.line, eval(s:a.expr))
+        \ call s:errors.add(s:a.file, s:a.line, eval(s:a.expr), 1)
   command! -nargs=1 UTSuite call s:errors.set_suite(<q-args>)
 
   command! -nargs=+ UTPlay   call s:errors.crt_suite.play(<f-args>)
