@@ -47,7 +47,7 @@ Notes:
 - the diff-mode is entered with `D` -- sorry, I wasn't able to display the keys
   typed in this screencast.
 - the signs and balloons are automatically added by
-  [lh-compil-hints](https://github.com/LucHermitte/lh-compil-hints)
+  [vim-compil-hints](https://github.com/LucHermitte/vim-compil-hints)
 
 ![vim-UT demo](doc/screencast-vim-UT.gif "vim-UT demo")
 
