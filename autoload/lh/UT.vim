@@ -149,10 +149,12 @@ let s:errors = {
       \ 'nb_success'            : 0,
       \ 'suites'                : []
       \ }
+let s:qf_ctx = get(s:, 'qf_ctx', lh#qf#make_context_map(0))
 
 " Function: s:errors.clear() dict {{{4
 function! s:errors.clear() dict abort
   let self.qf                    = []
+  let self.diffs                 = {}
   let self.nb_asserts            = 0
   let self.nb_successful_asserts = 0
   let self.nb_success            = 0
@@ -166,6 +168,11 @@ function! s:errors.display() dict abort
   " let g:errors = self.qf
   call setqflist(self.qf)
   call lh#qf#set_title(join(lh#list#get(self.suites, 'name'), ', '))
+  if !empty(self.diffs)
+    for [l, d] in items(self.diffs)
+      call s:qf_ctx.set(l, d)
+    endfor
+  endif
 
   " Open the quickfix window
   if exists(':Copen')
@@ -207,6 +214,11 @@ function! s:errors.add(FILE, LINE, message, ...) dict abort
   let messages = map(message[1:], 'split(v:val, ":", 1)')
   let qfs      = map(messages, "{'filename': v:val[0], 'lnum': v:val[1], 'text': join(v:val[2:], ':')}")
   call extend(self.qf, qfs)
+endfunction
+
+" Function: s:errors.register_diff(lines, diff) dict {{{4
+function! s:errors.register_diff(lines, diff) dict abort
+  call map(a:lines, 'extend(self.diffs, {v:val : a:diff})')
 endfunction
 
 " Function: s:errors.add_test(test_name) dict {{{4
@@ -434,6 +446,8 @@ function! lh#UT#assert_buffer_match(bang, line, ref) abort
       let a_filename = lh#string#or(get(c, 'file'), get(r, 'file'), '')
       let ctx = map(copy(diff), 'a_filename."::".v:val')
       let msg = join([msg]+ctx, "\n")
+      let lines = range(len(s:errors.qf)+1, len(s:errors.qf)+1+len(diff))
+      call s:errors.register_diff(lines, {'diff': diff, 'expected': r, 'observed': c})
     endif
   endif
   return lh#UT#assert_txt(a:bang, a:line, ok, msg)
@@ -830,6 +844,42 @@ function! lh#UT#check(must_keep, ...) abort
   " 5- Return the result
   let qf = s:errors.qf
   return [! nok, qf]
+endfunction
+
+" # Display diff {{{2
+" Add 'D' mapping to qf windows when UT is used {{{3
+aug UTqf
+  au!
+  au FileType qf
+        \ nnoremap <silent> <buffer> D :<c-u>call lh#UT#_show_diff()<cr>
+aug END
+
+" Function: s:display_with(content, cmd) {{{3
+function! s:display_with(content, cmd) abort
+  silent exe a:cmd
+  silent exe 'file '.fnameescape(substitute('UT-diff://'.a:content.name, '\*', '...', 'g'))
+  set modifiable
+  call setline(1, a:content.lines)
+  setlocal bt=nofile bh=wipe nobl noswf ro
+  diffthis
+  nnoremap <silent> <buffer> q :<c-u>call lh#UT#_quit_diff()<cr>
+  return bufnr('%')
+endfunction
+
+" Function: lh#UT#_show_diff([line]) {{{3
+function! lh#UT#_show_diff(...) abort
+  let line = get(a:, 1, line('.'))
+  let info = s:qf_ctx.get(line)
+  if type(info) == type({}) && !empty(info)
+    let t:UT_diff_buffers  = [s:display_with(info.observed, 'tabnew')]
+    let t:UT_diff_buffers += [s:display_with(info.expected, 'vnew')]
+  endif
+endfunction
+
+" Function: lh#UT#_quit_diff() {{{3
+function! lh#UT#_quit_diff() abort
+  echo "quit diff"
+  exe 'silent bw '.join(t:UT_diff_buffers)
 endfunction
 
 " }}}1

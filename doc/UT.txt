@@ -1,5 +1,5 @@
 *UT.txt*                Unit Testing Framework for Vim (v2.0.0)
-                        For Vim version 7+.    Last change: 09th May 2020
+                        For Vim version 7+.    Last change: 13th May 2020
 
                         By Luc Hermitte
                         hermitte {at} free {dot} fr
@@ -183,6 +183,11 @@ to the specified file or a list of lines.
 
 Differences will be displayed in the |quickfix-window|. Internally, they are
 computed with |lh#diff#compute()|.
+                                                    *UT-n_D*
+Within the quickfix-window, we can hit `D` on the message associated to a
+buffer matching failure in order to display, in a new |tabpage|, the expected
+content alongside the expected content in |diff-mode|.
+The diff-mode can be exited by hitting `q` from any scratch buffer involded.
 
 
 :AssertBufferMatches[!] {filename}                  *:AssertBufferMatches-file*

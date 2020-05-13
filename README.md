@@ -107,6 +107,14 @@ _matches_, _is_...
 Since V2, it's now possible set the content of a buffer before transforming it,
 and to test whether the new buffer state is as expected.
 
+Within the quickfix-window, we can hit `D` on the message associated to a
+buffer matching failure in order to display, in a new
+[`tabpage`](http://vimhelp.appspot.com/tabpage.txt.html#tabpage), the expected
+content alongside the expected content in
+[`diff-mode`](http://vimhelp.appspot.com/diff.txt.html#diff%2dmode).
+
+The diff-mode can be exited by hitting `q` from any scratch buffer involded.
+
 ```vim
 silent! call lh#window#create_window_with('new') " work around possible E36
 try
