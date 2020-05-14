@@ -1,5 +1,5 @@
-*UT.txt*                Unit Testing Framework for Vim (v2.0.0)
-                        For Vim version 7+.    Last change: 13th May 2020
+*UT.txt*                Unit Testing Framework for Vim (v2.0.1)
+                        For Vim version 7+.    Last change: 14th May 2020
 
                         By Luc Hermitte
                         hermitte {at} free {dot} fr
@@ -177,8 +177,8 @@ line...
 {marker}
                         The buffer content is reset with the lines specified
                         in the following section. Internally, this command
-                        relies on |:let=<<|. See its documentation regarding
-                        "trim" or {marker}.
+                        does not relies on |:let=<<|, yet you can read its
+                        documentation regarding "trim" or {marker}.
 
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -205,8 +205,8 @@ line...
 {marker}
                         The buffer content is tested against the lines
                         specified in the following section. Internally, this
-                        command relies on |:let=<<|. See its documentation
-                        regarding "trim" or {marker}.
+                        command does not relies on |:let=<<|, yet you can read
+                        its documentation regarding "trim" or {marker}.
 
 ------------------------------------------------------------------------------
 UT API                                               *UT-API*          {{{1

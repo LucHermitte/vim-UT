@@ -7,7 +7,7 @@
 " Version:      2.0.0.
 let s:k_version = '200'
 " Created:      06th May 2020
-" Last Update:  13th May 2020
+" Last Update:  14th May 2020
 "------------------------------------------------------------------------
 " Description:
 "       Unit Test for UT's :SetBufferContent & :AssertBufferMatch
@@ -40,9 +40,10 @@ function! s:Test_SetBuffer_EOF()
   SetBufferContent << trim EOF
   1
   2
+
   3
   EOF
-  call lh#UT#assert_buffer_match('', 37, ['1', '2', '3'])
+  call lh#UT#assert_buffer_match('', 46, ['1', '2', '', '3'])
 endfunction
 
 function! s:Test_SetBuffer_file()

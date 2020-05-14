@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      2.0.0
+" Version:      2.0.1
 " Created:      11th Feb 2009
-" Last Update:  13th May 2020
+" Last Update:  14th May 2020
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,8 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v2.0.1: Port AssertBufferMatches<< to older versions of Vim
+" 	        Improve offset handling
 " 	v2.0.0: Set qf title
 " 	        Simplify lh#UT#assert_txt()
 " 	        Improve context on errors
@@ -247,7 +249,7 @@ function! lh#UT#_callstack_with_linenr(throwpoint) abort
   for func in callstack
     if s:tempfile == func.script
       let func.script = substitute(func.script, escape(s:tempfile, '.\'), s:errors.crt_suite.file, 'g')
-      let func.pos    = func.pos - s:errors.offsets[func.pos+1] + 1
+      let func.pos    = func.pos - s:errors.crt_suite.offset
     endif
     " call s:errors.add(func.script, func.pos, '  called from '.(func.fname).'['.(func.offset).']')
     " TODO: exact func.offset is messed up by SetBufferContent/AssertBufferMatch << EOF
@@ -557,6 +559,24 @@ function! lh#UT#_reset_buffer(content) abort
   call setline(1, content)
 endfunction
 
+" Function: lh#UT#_lines(start, end, trim) {{{3
+function! lh#UT#_lines(start, end, trim) abort
+  let offset = s:errors.crt_suite.offset
+  let lines  = s:errors.crt_suite.lines[a:start+offset : a:end+offset]
+  " call s:Verbose('lines found: '. join(lines, "\n"))
+  if a:trim
+    " TODO: handle mismatches between spaces and tabs
+    let lens = map(filter(copy(lines), 'v:val[1:] =~ "\\S"'), 'strlen(matchstr(v:val[1:], "\\s*"))')
+    " call s:Verbose('lens found: '. string(lens))
+    let nb = 1 + min(lens)
+  else
+    let nb = 1
+  endif
+  call map(lines, 'v:val[nb:]')
+  call s:Verbose('lines found: '. join(lines, "\n"))
+  return lines
+endfunction
+
 " Function: s:PrepareFile(file) {{{4
 function! s:PrepareFile(file) abort
   if !filereadable(a:file)
@@ -568,18 +588,16 @@ function! s:PrepareFile(file) abort
   silent! let lines = readfile(a:file)
   let need_to_know_SNR = 0
   let suite = s:errors.new_suite(a:file)
-  let s:errors.offsets = []
 
   let isk = &isk
   set isk&vim
   try
-    let offset = 0
     let no = 0
     let state = ''
     let buf_content = []
     let last_line = len(lines)
     while no < last_line
-      let pos_in_src = no + 1 - offset
+      let pos_in_src = no + 1
       if lines[no] =~ '\v^\s*:=%(debug\s+)=AssertTxt>'
         let lines[no] = substitute(lines[no], '^\v\s*:=%(debug\s+)=\zsAssertTxt\s*(!=)\s*\(', 'call lh#UT#assert_txt("\1", '.pos_in_src.',', '')
 
@@ -613,25 +631,28 @@ function! s:PrepareFile(file) abort
           if  !empty(state)
             throw "Cannot set buffer content with << with while we are ".state." at line: ".pos_in_src
           endif
-          let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsSetBuf%[ferContent]\s*\<\<', 'let l:__UT_buf_content =<<', '')
+          let start      = no+1
+          let trim       = stridx(lines[no], 'trim') >= 0
           let end_marker = matchstr(lines[no], '\<\S\+\>\s*$')
-          let state = 'setting buffer content'
-
+          let state      = 'setting buffer content'
+          " let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsSetBuf%[ferContent]\s*\<\<', 'let l:__UT_buf_content =<<', '')
+          let lines[no] = '' " clear the line
         else
           let lines[no] = substitute(lines[no],  '\v^\s*:=%(debug\s+)=\zsSetBuf%[ferContent]\s*(.{-})\s*$', '\="call lh#UT#_reset_buffer(".string(submatch(1)).")"', '')
         endif
 
       elseif lines[no] =~ '\v^\s*:=%(debug\s+)=AssertBuf%[ferMatches]>'
-
         if  lines[no] =~ '<<'
           if  !empty(state)
             throw "Cannot assert buffer content with << with while we are ".state." at line: ".pos_in_src
           endif
-          let bang = matchstr(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertBuf%[ferMatches]\s*\zs(!=)\ze\s*\<\<')
-          let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertBuf%[ferMatches]\s*%(!=)\s*\<\<', 'let l:__UT_buf_match =<<', '')
+          let bang       = matchstr(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertBuf%[ferMatches]\s*\zs(!=)\ze\s*\<\<')
+          let start      = no+1
+          let trim       = stridx(lines[no], 'trim') >= 0
           let end_marker = matchstr(lines[no], '\<\S\+\>\s*$')
-          let state = 'asserting buffer content'
-
+          let state      = 'asserting buffer content'
+          " let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertBuf%[ferMatches]\s*%(!=)\s*\<\<', 'let l:__UT_buf_match =<<', '')
+          let lines[no] = '' " clear the line
         else
           let lines[no] = substitute(lines[no], '\v^\s*:=%(debug\s+)=\zsAssertBuf%[ferMatches]\s*(!=)\s*(.{-})\s*$', '\="call lh#UT#assert_buffer_match(".string(submatch(1)).", ".pos_in_src.", ".string(submatch(2)).")"', '')
         endif
@@ -653,40 +674,42 @@ function! s:PrepareFile(file) abort
       elseif exists('end_marker') && lines[no] =~ '^\s*'.end_marker.'\s*$'
         unlet end_marker
         if state =~ '^set'
-          call insert(lines, 'call lh#UT#_reset_buffer(l:__UT_buf_content)', no+1)
+          " call insert(lines, 'call lh#UT#_reset_buffer(l:__UT_buf_content)', no+1)
+          let lines[no] = printf('call lh#UT#_reset_buffer(lh#UT#_lines(%s, %s, %s))', start, no-1, trim)
         elseif state =~ '^assert'
-          call insert(lines, 'call lh#UT#assert_buffer_match("'.bang.'", '.pos_in_src.', l:__UT_buf_match)', no+1)
+          " call insert(lines, 'call lh#UT#assert_buffer_match("'.bang.'", '.pos_in_src.', l:__UT_buf_match)', no+1)
+          let lines[no] = printf('call lh#UT#assert_buffer_match("%s", %s, lh#UT#_lines(%s, %s, %s))', bang, start, start, no-1, trim)
         else
-          throw "Unexpected stituation! (".state.")"
+          throw "Unexpected situation! (".state.")"
         endif
         let state = ''
-        let last_line += 1
-        let offset += 1
+        " let last_line += 1
+      elseif state =~ '\v^set|^assert'
+        let lines[no] = '"' . lines[no]
       endif
       if lines[no] =~ '\v^\s*:=function!=\s+s:'
         let need_to_know_SNR = 1
       endif
       let no += 1
-      call add(s:errors.offsets, offset)
     endwhile
 
     " Inject s:getSNR() in the script if there is a s:Function in the Test script
-    let offset = 0
+    let s:errors.crt_suite.offset = 0
     if need_to_know_SNR
       call extend(lines, s:k_getSNR, 0)
-      let offset += len(s:k_getSNR)
+      let s:errors.crt_suite.offset += len(s:k_getSNR)
     endif
 
     " Inject local evualation of expressions in the script
     " => takes care of s:variables, s:Functions(), and l:variables
     call extend(lines, s:k_local_evaluate, 0)
-    let offset += len(s:k_local_evaluate)
-    call map(s:errors.offsets, 'v:val + offset')
+    let s:errors.crt_suite.offset += len(s:k_local_evaluate)
   finally
     let &isk=isk
   endtry
 
   silent call writefile(lines, suite.scriptname)
+  let suite.lines = lines
   if lh#UT#verbose()
     let g:lh#UT#debug_lines=lines
   endif
