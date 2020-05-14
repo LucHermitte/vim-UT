@@ -18,6 +18,7 @@
 " 	compatible with this framework.
 " 	v2.0.1: Port AssertBufferMatches<< to older versions of Vim
 " 	        Improve offset handling
+" 	        Force lang to C to decode localized error messages
 " 	v2.0.0: Set qf title
 " 	        Simplify lh#UT#assert_txt()
 " 	        Improve context on errors
@@ -833,6 +834,9 @@ endfunction
 " @throw None
 function! lh#UT#check(must_keep, ...) abort
   try
+    " Force C locale in order to be able to decode non English errors on
+    " windows
+    let cleanup = lh#lang#set_message_temporarily('C')
     " 1- clear the errors table
     if ! a:must_keep
       call s:errors.clear()
@@ -862,6 +866,10 @@ function! lh#UT#check(must_keep, ...) abort
 
   catch /.*/
     let nok = 1
+    " TODO: decode last error and add it to qf...
+
+  finally
+    call cleanup.finalize()
   endtry
 
   " 5- Return the result
