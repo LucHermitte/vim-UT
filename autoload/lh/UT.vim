@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      2.0.1
+" Version:      2.0.2
 " Created:      11th Feb 2009
-" Last Update:  14th May 2020
+" Last Update:  16th May 2020
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v2.0.2: Fix error decoding
 " 	v2.0.1: Port AssertBufferMatches<< to older versions of Vim
 " 	        Improve offset handling
 " 	        Force lang to C to decode localized error messages
@@ -753,7 +754,7 @@ function! s:RunOneFile(file) abort
     let msg = ': '.v:exception.' @ ' . throwpoint
     let [msg_ctx, linenr] = lh#UT#_callstack_with_linenr(v:throwpoint)
     let msg .= msg_ctx
-    call s:errors.add(a:file, line_nr, msg)
+    call s:errors.add(a:file, linenr, msg)
   finally
     return s:errors.crt_suite.conclude()
     " Never! the name must not be used by other Vim sessions
@@ -867,6 +868,12 @@ function! lh#UT#check(must_keep, ...) abort
   catch /.*/
     let nok = 1
     " TODO: decode last error and add it to qf...
+    let throwpoint = substitute(v:throwpoint, escape(s:tempfile, '.\'), a:file, 'g')
+    let msg = v:exception . ' @ ' . throwpoint
+    let [msg_ctx, linenr] = lh#UT#_callstack_with_linenr(v:throwpoint)
+    let msg .= msg_ctx
+    call s:errors.add(a:file, linenr, msg)
+    " call s:errors.set_test_failed()
 
   finally
     call cleanup.finalize()
