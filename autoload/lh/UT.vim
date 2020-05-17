@@ -6,7 +6,7 @@
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
 " Version:      2.0.2
 " Created:      11th Feb 2009
-" Last Update:  16th May 2020
+" Last Update:  18th May 2020
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -17,6 +17,7 @@
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
 " 	v2.0.2: Fix error decoding
+" 	        Don't assign Error type in log qf entries
 " 	v2.0.1: Port AssertBufferMatches<< to older versions of Vim
 " 	        Improve offset handling
 " 	        Force lang to C to decode localized error messages
@@ -313,7 +314,7 @@ function! s:RunOneTest(file) dict abort
   finally
     unlet s:errors.crt_test
     if s:print_test_names
-      call s:errors.add(a:file, 0, "Test <".(self.name)."> executed ". (self.failed ? 'but failed' : 'with success') )
+      call s:errors.add(a:file, 0, "Test <".(self.name)."> executed ". (self.failed ? 'but failed' : 'with success'), !test.failed )
     endif
   endtry
 endfunction
@@ -333,10 +334,11 @@ endfunction
 
 " Function: s:ConcludeSuite() dict {{{4
 function! s:ConcludeSuite() dict abort
+  let nb_errors = (s:errors.nb_tests) - (s:errors.nb_success)
   let name = self.name
-  call s:errors.add(self.file, 0,  'SUITE <'. name .'> '. (s:errors.nb_success) .'/'. (s:errors.nb_tests) . ' tests successfully executed.')
+  call s:errors.add(self.file, 0,  'SUITE <'. name .'> '. (s:errors.nb_success) .'/'. (s:errors.nb_tests) . ' tests successfully executed.', ! nb_errors)
   " call add(s:errors.qf, 'SUITE<'. self.name.'> '. s:rrors.nb_success .'/'. s:errors.nb_tests . ' tests successfully executed.')
-  return (s:errors.nb_tests) - (s:errors.nb_success)
+  return nb_errors
 endfunction
 
 " Function: s:PlayTests(...) dict {{{4
@@ -381,7 +383,7 @@ function! s:errors.set_suite(suite_name) dict abort
   call s:Verbose('SUITE <- '. a.expr, 1)
   call s:Verbose('SUITE NAME: '. a:suite_name, 2)
   " call self.add(a.file, a.line, 'SUITE <'. a.expr .'>')
-  call self.add(a.file,0, 'SUITE <'. a.expr .'>')
+  call self.add(a.file,0, 'SUITE <'. a.expr .'>', 1)
   let self.crt_suite.name = a.expr
   " let self.crt_suite.file = a.file
 endfunction
