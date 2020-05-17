@@ -18,7 +18,7 @@ RSpec.describe "unit tests" do
   describe "Check all tests", :unit_tests => true do
       pwd = Dir.pwd
       files = Dir.glob('./tests/**/*.vim')
-      pp "In directory #{pwd}"
+      pp "In directory #{pwd}, run #{files}"
       files.each{ |file|
           it "[#{file}] runs fine" do
               # vim.command('call lh#UT#print_test_names()')
@@ -29,10 +29,10 @@ RSpec.describe "unit tests" do
               vim.command('call writefile(["test"], "'+log_file+'")')
               vim.command('call lh#log#set_logger("file", "'+log_file+'")')
               vim.command('call lh#log#this("Logging UT '+file+'")')
-              # print "Check log file '#{log_file}' exists\n"
+              print "Check log file '#{log_file}' exists\n"
               expect(log_file).to be_an_existing_file
               result = vim.echo('lh#UT#check(0, "'+abs_file+'")')
-              # pp "result: #{abs_file} -> #{result}"
+              pp "result: #{abs_file} -> #{result}"
               # Keep only the list =>
               if not (result.nil? or result.empty?)
                   # Clean echoed messages
