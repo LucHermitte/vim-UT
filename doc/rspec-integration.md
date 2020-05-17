@@ -7,7 +7,7 @@ travis-ci.
 I provide a few files in order to automatically run vim-UT tests located in
 `{yourpluginpath}/test/{whatever}/*.vim`.
 
-### td;lr
+### tl;dr
 
 You'll need a `VimFlavor` file in your `{yourpluginpath}/test` directory that
 contains.
