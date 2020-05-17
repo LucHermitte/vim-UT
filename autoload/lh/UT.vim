@@ -837,9 +837,11 @@ endfunction
 " @throw None
 function! lh#UT#check(must_keep, ...) abort
   try
-    " Force C locale in order to be able to decode non English errors on
-    " windows
-    let cleanup = lh#lang#set_message_temporarily('C')
+    if lh#os#OnDOSWindows()
+      " Force C locale in order to be able to decode non English errors on
+      " windows
+      let cleanup = lh#lang#set_message_temporarily('C')
+    endif
     " 1- clear the errors table
     if ! a:must_keep
       call s:errors.clear()
@@ -878,7 +880,9 @@ function! lh#UT#check(must_keep, ...) abort
     " call s:errors.set_test_failed()
 
   finally
-    call cleanup.finalize()
+    if lh#os#OnDOSWindows()
+      call cleanup.finalize()
+    endif
   endtry
 
   " 5- Return the result
