@@ -2,10 +2,10 @@
 " File:		plugin/UT.vim                                        {{{1
 " Author:	Luc Hermitte <EMAIL:hermitte {at} free {dot} fr>
 "		<URL:http://github.com/LucHermitte/vim-UT>
-let s:k_version = 020
-" Version:	0.2.0
+let s:k_version = 203
+" Version:	2.0.3
 " Created:	11th Feb 2009
-" Last Update:	20th Nov 2015
+" Last Update:	02nd Jun 2020
 "------------------------------------------------------------------------
 " Description:	Yet Another Unit Testing Framework for Vim
 "
@@ -31,6 +31,9 @@ set cpo&vim
 " Real commands (used to call UT files)
 "command! UTRun {filenames}
 command! -bang -nargs=+ -complete=file UTRun :call lh#UT#run("<bang>",<f-args>)
+
+" UTBatch {outputfile} {tests}...
+command! -nargs=+ -complete=file UTBatch :call lh#UT#batch(<f-args>)
 
 " Fake commands (used in UT files)
 "command UTSuite {expression} [#{comments}]

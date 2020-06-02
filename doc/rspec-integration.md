@@ -25,7 +25,7 @@ In your Rakefile, you'll have to add
 ```Rakefile
 task :spec do
   # 'spec' is implicitly run as well
-  sh "rspec ~/.vim-flavor/repos/LucHermitte_vim-UT/spec"
+  sh "rspec ~/.vim-flavor/repos/LucHermitte_vim-UT/spec/UT_spec_v2.rb"
 end
 
 task :install do
@@ -39,7 +39,6 @@ end
 You'll also need to inject the correct `LOAD_PATH` to rspec
 ```.rspec
 --color
---require spec_helper
 --format documentation
 -I ~/.vim-flavor/repos/LucHermitte_vim-UT/spec
 ```
@@ -85,7 +84,7 @@ task :test    => :spec
 
 task :spec do
   # 'spec' is implicitly run as well
-  sh 'rspec ~/.vim-flavor/repos/LucHermitte_vim-UT/spec'
+  sh 'rspec ~/.vim-flavor/repos/LucHermitte_vim-UT/spec/UT_spec_v2.rb'
 end
 
 
@@ -127,7 +126,6 @@ before_script:
 #### `.rspec`
 ```.rspec
 --color
---require spec_helper
 --format documentation
 -I ~/.vim-flavor/repos/LucHermitte_vim-UT/spec
 ```

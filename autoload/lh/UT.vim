@@ -17,6 +17,7 @@
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
 " 	v2.0.3: Change lh#UT#check() result
+" 	      : Add UTBatch
 " 	v2.0.2: Fix error decoding
 " 	        Don't assign Error type in log qf entries
 " 	v2.0.1: Port AssertBufferMatches<< to older versions of Vim
@@ -891,6 +892,18 @@ function! lh#UT#check(must_keep, ...) abort
   let s_qf = map(deepcopy(qf), 'printf("%s:%s: %s", v:val["filename"], v:val["lnum"], v:val["text"])')
   return [! nok, s_qf]
   " return [! nok, qf]
+endfunction
+
+" Function: lh#UT#batch(outputfile, tests...) {{{3
+function! lh#UT#batch(outputfile, ...) abort
+  let [ok, qf] = call('lh#UT#check', [0]+a:000)
+  let wr_k = ! writefile(qf, a:outputfile)
+  let ok = ok && wr_k
+  if ok
+    q
+  else
+    cq
+  endif
 endfunction
 
 " # Display diff {{{2
