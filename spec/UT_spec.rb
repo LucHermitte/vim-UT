@@ -29,10 +29,10 @@ RSpec.describe "unit tests" do
               vim.command('call writefile(["test"], "'+log_file+'")')
               vim.command('call lh#log#set_logger("file", "'+log_file+'")')
               vim.command('call lh#log#this("Logging UT '+file+'")')
-              print "Check log file '#{log_file}' exists\n"
+              # print "Check log file '#{log_file}' exists\n"
               expect(log_file).to be_an_existing_file
               result = vim.echo('lh#UT#check(0, "'+abs_file+'")')
-              pp "result: #{abs_file} -> #{result}"
+              # pp "result: #{abs_file} -> #{result}"
               # Keep only the list =>
               if not (result.nil? or result.empty?)
                   # Clean echoed messages
@@ -40,10 +40,10 @@ RSpec.describe "unit tests" do
               end
               # pp "result0: #{result[0]}"
               if result.nil? or result.empty? or (result[0] == 0)
-                  pp "Log: #{file}.log"
+                  print "Log file: #{file}.log\n"
                   if File.file?(log_file)
                       log = File.read(log_file)
-                      print "#{log}\n"
+                      print "LOG: #{log}\n"
                   else
                       print "Warning: Cannot read #{log_file}\n"
                   end

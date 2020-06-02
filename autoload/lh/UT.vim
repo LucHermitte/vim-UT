@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      2.0.2
+" Version:      2.0.3
 " Created:      11th Feb 2009
-" Last Update:  18th May 2020
+" Last Update:  02nd Jun 2020
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v2.0.3: Change lh#UT#check() result
 " 	v2.0.2: Fix error decoding
 " 	        Don't assign Error type in log qf entries
 " 	v2.0.1: Port AssertBufferMatches<< to older versions of Vim
@@ -148,6 +149,7 @@ let s:tempfile = tempname()
 " s:errors {{{4
 let s:errors = {
       \ 'qf'                    : [],
+      \ 'diffs'                 : {},
       \ 'crt_suite'             : {},
       \ 'nb_asserts'            : 0,
       \ 'nb_successful_asserts' : 0,
@@ -215,7 +217,6 @@ function! s:errors.add(FILE, LINE, message, ...) dict abort
         \ 'type'    : success ? '' : 'E'
         \}
   call add(self.qf, qfe)
-  let self.qf += message[1:]
   let messages = map(message[1:], 'split(v:val, ":", 1)')
   let qfs      = map(messages, "{'filename': v:val[0], 'lnum': v:val[1], 'text': join(v:val[2:], ':')}")
   call extend(self.qf, qfs)
@@ -856,7 +857,7 @@ function! lh#UT#check(must_keep, ...) abort
     for file in a:000
       let lFile = lh#path#is_absolute_path(file) ? [file] : lh#path#glob_as_list(rtp, file)
       if empty(lFile)
-        let s:errors.qf += ["Cannot find file ".file." in ".getcwd()]
+        call s:errors.add(file, 0, "Cannot find file ".file." in ".getcwd(), 0)
         let nok = 1
       endif
       call extend(files, lFile)
@@ -872,11 +873,11 @@ function! lh#UT#check(must_keep, ...) abort
   catch /.*/
     let nok = 1
     " TODO: decode last error and add it to qf...
-    let throwpoint = substitute(v:throwpoint, escape(s:tempfile, '.\'), a:file, 'g')
+    let throwpoint = substitute(v:throwpoint, escape(s:tempfile, '.\'), file, 'g')
     let msg = v:exception . ' @ ' . throwpoint
     let [msg_ctx, linenr] = lh#UT#_callstack_with_linenr(v:throwpoint)
     let msg .= msg_ctx
-    call s:errors.add(a:file, linenr, msg)
+    call s:errors.add(file, linenr, msg)
     " call s:errors.set_test_failed()
 
   finally
@@ -887,7 +888,9 @@ function! lh#UT#check(must_keep, ...) abort
 
   " 5- Return the result
   let qf = s:errors.qf
-  return [! nok, qf]
+  let s_qf = map(deepcopy(qf), 'printf("%s:%s: %s", v:val["filename"], v:val["lnum"], v:val["text"])')
+  return [! nok, s_qf]
+  " return [! nok, qf]
 endfunction
 
 " # Display diff {{{2

@@ -8,7 +8,7 @@ RSpec::Matchers.define :be_successful do
   end
   failure_message do |actual|
     # pp actual[1].empty?
-    actual[1].join("\n")
+    "Unsuccessful result: "+actual[1].join("\n")
   end
 end
 
