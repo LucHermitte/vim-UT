@@ -14,8 +14,8 @@ contains.
 ```
 flavor 'LucHermitte/vim-UT', '>= 0.3.0'
 ```
-Note: you don't want to have your plugin to always depend on vim-flavor. Only
-your tests will need it.
+Note: you don't want to have your plugin to always depend on vim-UT. Only your
+tests will need it.
 
 __Beware, VimFlavor won't clone from `master` but from the last known tag. I've
 lost days trying to figure out why tests were failing because of that.__
@@ -137,6 +137,16 @@ For instance,
 lh-dev plugin/dev.vim
 ```
 
+#### `spec/flavor.vimrc`
+
+In case you need to make sure some things are defined as they would have been
+with a `.vimrc`, define this file.
+
+Note: with vim-flavor v2, it shall source `~/.vim/flavors/bootstrap.vim`.
+vim-flavor v3 stores plugins into "start" package directory, but the rspec
+scripts provided are not yet compatible with vim-flavor v3.
+See [`:h load-plugins`](http://vimhelp.appspot.com/starting.txt.html#load%2dplugins).
+
 ### Notes
 
 I know, vim-flavor or vim-runner are enough and don't require another unit
@@ -155,3 +165,9 @@ uncaught exceptions. Then, I can easily navigate to the failed assertion and
 run expression or debug them with my `CTRL-L-x`,`CTRL-L-e`, and `CTRL-L-d`
 mappings from
 [`vim_set` ftplugin](http://github.com/LucHermitte/lh-misc/tree/master/ftplugin/vim_set.vim).
+
+Note that since vim-UT V2, `UT_spec_v2.rb`, doesn't require vim-runner. It only
+requires rspec.  But beware of
+[`feedkeys()`](http://vimhelp.appspot.com/eval.txt.html#feedkeys%28%29) or
+[`:normal`](http://vimhelp.appspot.com/various.txt.html#%3anormal) when
+testing mappings or abbreviations.
