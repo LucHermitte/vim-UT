@@ -17,8 +17,9 @@ RSpec.describe "unit tests" do
     u_vimrc = ""
   else
     print "bootstrapping vimrc found: #{vimrc}\n"
+    vim_plugin_path = File.expand_path('.')
     # '-u {file}' forces '&compatible' => '-N'
-    u_vimrc = "-u #{vimrc} -N -c 'filetype plugin on'"
+    u_vimrc = "-u #{vimrc} -N --cmd 'set rtp+=#{vim_plugin_path},#{vim_plugin_path}/after' --cmd 'filetype plugin on'"
   end
 
   # The tests
