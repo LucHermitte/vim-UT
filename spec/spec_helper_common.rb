@@ -46,6 +46,7 @@ Vimrunner::RSpec.configure do |config|
     # vim = Vimrunner.start_vim
     vim.add_plugin(vim_flavor_path, 'bootstrap.vim')
     vim.prepend_runtimepath(vim_plugin_path)
+    vim.append_runtimepath(vim_plugin_path+'/after')
 
     vim_UT_path      = File.expand_path('../../../vim-UT', __FILE__)
     vim.add_plugin(vim_UT_path, 'plugin/UT.vim')
