@@ -4,9 +4,9 @@
 "               <URL:http://github.com/LucHermitte/vim-UT>
 " License:      GPLv3 with exceptions
 "               <URL:http://github.com/LucHermitte/vim-UT/License.md>
-" Version:      2.0.3
+" Version:      2.0.6
 " Created:      11th Feb 2009
-" Last Update:  02nd Jun 2020
+" Last Update:  19th Mar 2021
 "------------------------------------------------------------------------
 " Description:  Yet Another Unit Testing Framework for Vim
 "
@@ -16,6 +16,7 @@
 " History:
 " 	Strongly inspired by Tom Link's tAssert plugin: all its functions are
 " 	compatible with this framework.
+" 	v2.0.6: Fix empty buffer comparison
 " 	v2.0.3: Change lh#UT#check() result
 " 	      : Add UTBatch
 " 	v2.0.2: Fix error decoding
@@ -429,6 +430,11 @@ function! lh#UT#assert_buffer_match(bang, line, ref) abort
   let ref     = type(a:ref) == type([])
         \ ? a:ref
         \ : readfile(a:ref)
+  if empty(ref)
+    let ref = ['']
+    " getline(1, '$') will always return [''], while AssertBufferMatch may
+    " return []
+  endif
   if ref == content
     let ok = 1
     let msg = ''
@@ -570,6 +576,7 @@ function! lh#UT#_lines(start, end, trim) abort
   let offset = s:errors.crt_suite.offset
   let lines  = s:errors.crt_suite.lines[a:start+offset : a:end+offset]
   " call s:Verbose('lines found: '. join(lines, "\n"))
+  call s:Verbose('lines found: '. string(lines))
   if a:trim
     " TODO: handle mismatches between spaces and tabs
     let lens = map(filter(copy(lines), 'v:val[1:] =~ "\\S"'), 'strlen(matchstr(v:val[1:], "\\s*"))')
@@ -579,7 +586,8 @@ function! lh#UT#_lines(start, end, trim) abort
     let nb = 1
   endif
   call map(lines, 'v:val[nb:]')
-  call s:Verbose('lines found: '. join(lines, "\n"))
+  " call s:Verbose('lines found: '. join(lines, "\n"))
+  call s:Verbose('lines found: -> '. string(lines))
   return lines
 endfunction
 
