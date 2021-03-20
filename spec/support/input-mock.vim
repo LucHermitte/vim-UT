@@ -2,10 +2,10 @@
 " File:         spec/input-mock.vim                               {{{1
 " Author:       Luc Hermitte <EMAIL:luc {dot} hermitte {at} gmail {dot} com>
 "		<URL:http://github.com/LucHermitte/mu-template>
-" Version:      1.0.6.
-let s:k_version = '106'
+" Version:      2.0.6.
+let s:k_version = '206'
 " Created:      17th Dec 2015
-" Last Update:  14th Mar 2017
+" Last Update:  20th Mar 2021
 "------------------------------------------------------------------------
 " Description:
 " Mock lh#ui#input and lh#ui#confirm functions for vimrunner tests
@@ -22,8 +22,14 @@ function! lh#ui#input(...)
   return exists('g:mocked_input') ? g:mocked_input : a:2
 endfunction
 
+" Unfortunately, for some reason I cannot save the original version in
+" funcref() in order to decide wich to call...
 function! lh#ui#confirm(...)
-  return g:mocked_confirm
+  if  type(g:mocked_confirm) == type([])
+    return remove(g:mocked_confirm, 0)
+  else
+    return g:mocked_confirm
+  endif
 endfunction
 
 "------------------------------------------------------------------------
