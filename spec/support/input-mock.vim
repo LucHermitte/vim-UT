@@ -5,7 +5,7 @@
 " Version:      2.0.6.
 let s:k_version = '206'
 " Created:      17th Dec 2015
-" Last Update:  20th Mar 2021
+" Last Update:  24th Jun 2022
 "------------------------------------------------------------------------
 " Description:
 " Mock lh#ui#input and lh#ui#confirm functions for vimrunner tests
@@ -18,15 +18,23 @@ set cpo&vim
 " First load the true definitions in order to overwrite them
 runtime autoload/lh/ui.vim
 
-function! lh#ui#input(...)
+function! lh#ui#input(...) abort
   return exists('g:mocked_input') ? g:mocked_input : a:2
 endfunction
 
 " Unfortunately, for some reason I cannot save the original version in
 " funcref() in order to decide wich to call...
-function! lh#ui#confirm(...)
+function! lh#ui#confirm(...) abort
   if  type(g:mocked_confirm) == type([])
     return remove(g:mocked_confirm, 0)
+  else
+    return g:mocked_confirm
+  endif
+endfunction
+
+function! lh#ui#combo(...) abort
+  if  type(g:mocked_combo) == type([])
+    return remove(g:mocked_combo, 0)
   else
     return g:mocked_confirm
   endif
