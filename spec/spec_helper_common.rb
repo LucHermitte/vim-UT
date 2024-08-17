@@ -42,8 +42,8 @@ Vimrunner::RSpec.configure do |config|
 
   config.start_vim do
 
-    vim = Vimrunner.start_gvim
-    # vim = Vimrunner.start_vim
+    # vim = Vimrunner.start_gvim
+    vim = Vimrunner.start
     vim.add_plugin(vim_flavor_path, 'bootstrap.vim')
     vim.prepend_runtimepath(vim_plugin_path)
     vim.append_runtimepath(vim_plugin_path+'/after')
@@ -62,7 +62,7 @@ Vimrunner::RSpec.configure do |config|
     }
 
     # pp vim_flavor_path
-    pp vim.echo('&rtp')
+    pp vim.echo('"RTP: "..&rtp')
 
     vim
   end
