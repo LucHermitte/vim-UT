@@ -14,13 +14,17 @@ RSpec.describe "unit tests" do
   vimrc = vimrc_candidates.find{ |candidate| File.file?(candidate)}
   if vimrc.nil?
     print "no bootstrapping vimrc found...\n"
-    u_vimrc = ""
+    vim_plugin_path = File.expand_path('.')
+    u_vimrc = "-u None -U NONE -N --cmd 'set rtp+=#{vim_plugin_path},#{vim_plugin_path}/after' --cmd 'filetype plugin on'"
   else
     print "bootstrapping vimrc found: #{vimrc}\n"
     vim_plugin_path = File.expand_path('.')
     # '-u {file}' forces '&compatible' => '-N'
     u_vimrc = "-u #{vimrc} -N --cmd 'set rtp+=#{vim_plugin_path},#{vim_plugin_path}/after' --cmd 'filetype plugin on'"
   end
+
+  cmd = %(vim #{u_vimrc} -X -V1 -e -s -c "echo 'RTP: '..&rtp" -c "scriptnames" -c "q")
+  pp system(cmd)
 
   # The tests
   describe "Check all tests", :unit_tests => true do
@@ -35,7 +39,7 @@ RSpec.describe "unit tests" do
         # pp "abs: #{abs_file}"
         # pp "log: #{log_file}"
         # TODO: collect verbose mode messages
-        cmd = %(vim #{u_vimrc} -c "UTBatch #{log_file} #{abs_file}")
+        cmd = %(vim #{u_vimrc} -N -X -e -s -c "UTBatch #{log_file} #{abs_file}")
         # pp cmd
         ok = system(cmd)
         # print "Check log file '#{log_file}' exists\n"
