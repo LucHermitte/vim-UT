@@ -15,7 +15,7 @@ RSpec.describe "unit tests" do
   if vimrc.nil?
     print "no bootstrapping vimrc found...\n"
     vim_plugin_path = File.expand_path('.')
-    u_vimrc = "-u None -U NONE -N --cmd 'set rtp+=#{vim_plugin_path},#{vim_plugin_path}/after' --cmd 'filetype plugin on'"
+    u_vimrc = "-u NONE -U NONE -N --cmd 'set rtp+=#{vim_plugin_path},#{vim_plugin_path}/after' --cmd 'filetype plugin on'"
   else
     print "bootstrapping vimrc found: #{vimrc}\n"
     vim_plugin_path = File.expand_path('.')
