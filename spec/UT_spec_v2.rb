@@ -15,12 +15,12 @@ RSpec.describe "unit tests" do
   if vimrc.nil?
     print "no bootstrapping vimrc found...\n"
     vim_plugin_path = File.expand_path('.')
-    u_vimrc = "-u NORC -U NORC -N --cmd 'set rtp+=#{vim_plugin_path},#{vim_plugin_path}/after' --cmd 'filetype plugin on'"
+    u_vimrc = "-u NORC -U NORC -N --cmd 'set rtp+=#{vim_plugin_path},#{vim_plugin_path}/after' --cmd 'filetype plugin indent on'"
   else
     print "bootstrapping vimrc found: #{vimrc}\n"
     vim_plugin_path = File.expand_path('.')
     # '-u {file}' forces '&compatible' => '-N'
-    u_vimrc = "-u #{vimrc} -N --cmd 'set rtp+=#{vim_plugin_path},#{vim_plugin_path}/after' --cmd 'filetype plugin on'"
+    u_vimrc = "-u #{vimrc} -N --cmd 'set rtp+=#{vim_plugin_path},#{vim_plugin_path}/after' --cmd 'filetype plugin indent on'"
   end
 
   cmd = %(vim #{u_vimrc} -X -V1 -e -s -c "echo 'RTP: '..&rtp" -c "scriptnames" -c "q")
@@ -44,7 +44,7 @@ RSpec.describe "unit tests" do
         ok = system(cmd)
         # print "Check log file '#{log_file}' exists\n"
         # expect(log_file).to be_an_existing_file
-        if ! ok 
+        if ! ok
           # print "Log file: #{file}.log\n"
           if File.file?(log_file)
             log = File.read(log_file)
